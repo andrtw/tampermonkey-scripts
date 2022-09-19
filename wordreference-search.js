@@ -30,15 +30,16 @@ function log(message, data) {
 function injectStyle(headElem) {
     let css = `.wr-box {
 display: none;
-background: rgba(230, 230, 230, .8);
-border: 1px solid rgb(200, 200, 200);
-border-radius: 4px;
-padding: 4px;
+background: #fff;
+box-shadow: 0 12px 48px rgb(109 117 141 / 20%);
+border-radius: 8px;
+padding: 4px 6px;
 position: absolute;
 z-index: 2147483644;
 align-items: center;
 font-size: 12px;
-font-family: Arial;
+font-family: sans-serif;
+font-style: normal;
 line-height: 14px;
 }`;
     css += `.wr-logo {
@@ -56,7 +57,7 @@ display: flex;
 flex-direction: column;
 margin-left: 4px;
 padding-left: 4px;
-border-left: 1px solid rgb(200, 200, 200);
+border-left: 1px solid rgb(109 117 141 / 20%);
 }`;
     css += `.wr-loading {
 font-size: 16px;
@@ -72,6 +73,7 @@ background-position: -5px -117px;
 width: 23px;
 height: 16px;
 cursor: pointer;
+margin-top: 2px;
 }`;
     const style = document.createElement('style');
     if (style.styleSheet) {
