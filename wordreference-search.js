@@ -65,6 +65,7 @@ font-size: 16px;
     css += `.wr-pron {
 color: #003399;
 white-space: break-spaces;
+margin-bottom: 2px;
 }`;
     css += `.wr-audio-icon {
 background-image: url(https://www.wordreference.com/2012/style/sprite_2019.png?v=2);
@@ -73,7 +74,6 @@ background-position: -5px -117px;
 width: 23px;
 height: 16px;
 cursor: pointer;
-margin-top: 2px;
 }`;
     const style = document.createElement('style');
     if (style.styleSheet) {
