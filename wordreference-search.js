@@ -28,53 +28,89 @@ function log(message, data) {
 }
 
 function injectStyle(headElem) {
-    let css = `.wr-box {
-display: none;
-background: #fff;
-box-shadow: 0 12px 48px rgb(109 117 141 / 20%);
-border-radius: 8px;
-padding: 4px 6px;
-position: absolute;
-z-index: 2147483644;
-align-items: center;
-font-size: 12px;
-font-family: sans-serif;
-font-style: normal;
-line-height: 14px;
-}`;
-    css += `.wr-logo {
-background-image: url(https://www.wordreference.com/favicons/favicon.ico);
-background-size: contain;
-width: 18px;
-height: 18px;
-cursor: pointer;
-}`;
-    css += `.wr-box-content {
-align-items: center;
-}`;
-    css += `.wr-box-content-right {
-display: flex;
-flex-direction: column;
-margin-left: 4px;
-padding-left: 4px;
-border-left: 1px solid rgb(109 117 141 / 20%);
-}`;
-    css += `.wr-loading {
-font-size: 16px;
-}`;
-    css += `.wr-pron {
-color: #003399;
-white-space: break-spaces;
-margin-bottom: 2px;
-}`;
-    css += `.wr-audio-icon {
-background-image: url(https://www.wordreference.com/2012/style/sprite_2019.png?v=2);
-background-size: 160px 172px;
-background-position: -5px -117px;
-width: 23px;
-height: 16px;
-cursor: pointer;
-}`;
+    const css = `
+.wr-box {
+  display: none;
+  background: #fff;
+  box-shadow: 0 12px 48px rgb(109 117 141 / 20%);
+  border-radius: 8px;
+  padding: 4px 6px;
+  position: absolute;
+  z-index: 2147483644;
+  align-items: center;
+  font-size: 12px;
+  font-family: sans-serif;
+  font-style: normal;
+  line-height: 14px;
+}
+.wr-logo {
+  background-image: url(https://www.wordreference.com/favicons/favicon.ico);
+  background-size: contain;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+.wr-box-content {
+  align-items: center;
+}
+.wr-box-content-right {
+  display: flex;
+  flex-direction: column;
+  margin-left: 4px;
+  padding-left: 4px;
+  border-left: 1px solid rgb(109 117 141 / 20%);
+}
+.wr-pron {
+  color: #003399;
+  white-space: break-spaces;
+  margin-bottom: 2px;
+}
+.wr-audio-icon {
+  background-image: url(https://www.wordreference.com/2012/style/sprite_2019.png?v=2);
+  background-size: 160px 172px;
+  background-position: -5px -117px;
+  width: 23px;
+  height: 16px;
+  cursor: pointer;
+}
+.wr-loading,
+.wr-loading:after {
+  border-radius: 50%;
+  width: 10em;
+  height: 10em;
+}
+.wr-loading {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #ddd;
+  border-left: 2px solid rgb(0, 0, 0, 0);
+  -webkit-transform: translateZ(0);
+  -ms-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-animation: rotate 1.1s infinite linear;
+  animation: rotate 1.1s infinite linear;
+}
+@-webkit-keyframes rotate {
+  0% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+@keyframes rotate {
+  0% {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+`;
     const style = document.createElement('style');
     if (style.styleSheet) {
         style.styleSheet.cssText = css;
@@ -182,7 +218,6 @@ class BoxController {
     #buildLoadingElem() {
         const loadingElem = document.createElement('span');
         loadingElem.classList.add('wr-loading');
-        loadingElem.appendChild(document.createTextNode('🤔'));
         return loadingElem;
     }
 
