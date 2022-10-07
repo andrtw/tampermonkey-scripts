@@ -24,27 +24,40 @@ const CODE_ARROW_LEFT = 37;
 const CODE_ARROW_RIGHT = 39;
 
 function injectStyle(headElem) {
-    let css = `.mybtn {
-width: 32px;
-height: 32px;
-min-width: 32px;
-min-height: 32px;
-font-size: 8px;
-background: #181818;
-margin: 4px;
-outline: none;
-border: none;
-color: #fff;
-border-radius: 2px;
-cursor: pointer;
-}`;
-    css += `.mybtn:hover { background: #141414; }`;
-    css += '.mybtn:active { background: #101010; }';
-    css += '.label-speed { color: #fff; margin: 4px; cursor: pointer; }';
-    css += '.label-speed-fullscreen { width: 54px !important; height: 63px !important; }';
-    css += '.label-time-remaining { margin: 12px }';
-    css += '.ytp-ad-overlay-container { display: none; }';
-
+    let css = `
+.mybtn {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  font-size: 8px;
+  background: #181818;
+  margin: 4px;
+  outline: none;
+  border: none;
+  color: #fff;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.mybtn:hover {
+  background: #141414;
+}
+.mybtn:active {
+  background: #101010;
+}
+.label-speed {
+  color: #fff; margin: 4px; cursor: pointer;
+}
+.label-speed-fullscreen {
+  width: 54px !important; height: 63px !important;
+}
+.label-time-remaining {
+  margin: 12px
+}
+.ytp-ad-overlay-container {
+  display: none;
+}
+`;
     const style = document.createElement('style');
     if (style.styleSheet) {
         style.styleSheet.cssText = css;
