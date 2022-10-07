@@ -2,7 +2,7 @@
 
 A collection of [Tampermonkey](https://www.tampermonkey.net/) scripts enabling custom functionalities for the following websites.
 
-## Everywhere
+## Global (applies to every website)
 
 * Select words to quickly translate them with WordReference without leaving the website
 
