@@ -25,37 +25,39 @@ const CODE_ARROW_RIGHT = 39;
 
 function injectStyle(headElem) {
     let css = `
-.mybtn {
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  min-height: 32px;
-  font-size: 8px;
+.yt-btn {
+  width: 40px;
+  height: 40px;
+  font-size: 10px;
   background: #181818;
-  margin: 4px;
+  margin: 2px;
   outline: none;
   border: none;
   color: #fff;
-  border-radius: 2px;
+  border-radius: 50%;
   cursor: pointer;
+  font-family: "Roboto","Arial",sans-serif;
 }
-.mybtn:hover {
-  background: #141414;
-}
-.mybtn:active {
-  background: #101010;
+.yt-btn:active {
+  background: #303030;
 }
 .label-speed {
-  color: #fff; margin: 4px; cursor: pointer;
+  color: #fff;
+  margin: 4px;
+  cursor: pointer;
 }
 .label-speed-fullscreen {
-  width: 54px !important; height: 63px !important;
+  width: 54px !important;
+  height: 63px !important;
 }
 .label-time-remaining {
   margin: 12px
 }
 .ytp-ad-overlay-container {
   display: none;
+}
+.last-btn {
+  margin-right: 16px;
 }
 `;
     const style = document.createElement('style');
@@ -75,7 +77,7 @@ function injectFontAwesome(headElem) {
 
 function buildButton(text, onClick) {
     const btn = document.createElement('button');
-    btn.classList.add('mybtn');
+    btn.classList.add('yt-btn');
     btn.appendChild(document.createTextNode(text));
     btn.onclick = onClick;
     return btn;
@@ -222,6 +224,7 @@ class RemainingTimeController {
         const increaseSpeedBtn = buildIconButton(['fas', 'fa-plus'], increaseSpeed);
 
         const pipBtn = buildIconButton(['fas', 'fa-clone'], togglePip);
+        pipBtn.classList.add('last-btn');
 
         const labelSpeedFullscreen = document.createElement('button');
         labelSpeedFullscreen.classList.add('label-speed-fullscreen', 'ytp-watch-later-button', 'ytp-button');
