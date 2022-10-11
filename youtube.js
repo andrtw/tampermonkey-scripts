@@ -46,9 +46,14 @@ function injectStyle(headElem) {
   margin: 4px;
   cursor: pointer;
 }
-.label-speed-fullscreen {
-  width: 54px !important;
-  height: 63px !important;
+.fullscreen-btn-container {
+  height: 100% !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: linear-gradient(270deg, black 40%, transparent);
+  right: -96%;
+  padding-left: 22px;
 }
 .label-time-remaining {
   margin: 12px
@@ -58,6 +63,9 @@ function injectStyle(headElem) {
 }
 .last-btn {
   margin-right: 16px;
+}
+.hidden {
+  display: none;
 }
 `;
     const style = document.createElement('style');
@@ -116,7 +124,7 @@ class RemainingTimeController {
         }
     }
 
-     startUpdating() {
+    startUpdating() {
         if (this.#remainingTimeId !== undefined) {
             return;
         }
@@ -179,7 +187,7 @@ class RemainingTimeController {
             currentSpeed = speed;
             video.playbackRate = speed;
             speedBtn.innerHTML = speed;
-            labelSpeedFullscreen.innerHTML = speed;
+            fullscreenSpeedBtn.innerHTML = speed;
             remainingTimeController.updateRemainingTime();
         }
 
@@ -219,26 +227,40 @@ class RemainingTimeController {
             }
         });
 
+        document.addEventListener('fullscreenchange', (e) => {
+            if (document.fullscreenElement) {
+                fullscreenBtnContainer.classList.remove('hidden');
+            } else {
+                fullscreenBtnContainer.classList.add('hidden');
+            }
+        });
+
         const speedBtn = buildButton(video.playbackRate, resetSpeed);
         const decreaseSpeedBtn = buildIconButton(['fas', 'fa-minus'], decreaseSpeed);
         const increaseSpeedBtn = buildIconButton(['fas', 'fa-plus'], increaseSpeed);
 
+        const fullscreenSpeedBtn = buildButton(video.playbackRate, resetSpeed);
+        const fullscreenDecreaseSpeedBtn = buildIconButton(['fas', 'fa-minus'], decreaseSpeed);
+        const fullscreenIncreaseSpeedBtn = buildIconButton(['fas', 'fa-plus'], increaseSpeed);
+
         const pipBtn = buildIconButton(['fas', 'fa-clone'], togglePip);
         pipBtn.classList.add('last-btn');
 
-        const labelSpeedFullscreen = document.createElement('button');
-        labelSpeedFullscreen.classList.add('label-speed-fullscreen', 'ytp-watch-later-button', 'ytp-button');
-        labelSpeedFullscreen.onclick = () => resetSpeed();
-        labelSpeedFullscreen.appendChild(document.createTextNode(video.playbackRate));
+        const btnParent = document.querySelector('#end');
+        btnParent.prepend(pipBtn);
+        btnParent.prepend(decreaseSpeedBtn);
+        btnParent.prepend(increaseSpeedBtn);
+        btnParent.prepend(speedBtn);
 
-        const defaultParent = document.querySelector('#end');
-        const defaultFullscreenParent = document.querySelector('.ytp-chrome-top-buttons');
+        const fullscreenBtnContainer = document.createElement('div');
+        fullscreenBtnContainer.classList.add('hidden', 'fullscreen-btn-container', 'ytp-chrome-bottom');
+        fullscreenBtnContainer.appendChild(fullscreenSpeedBtn);
+        fullscreenBtnContainer.appendChild(fullscreenIncreaseSpeedBtn);
+        fullscreenBtnContainer.appendChild(fullscreenDecreaseSpeedBtn);
+        const fullscreenParent = document.querySelector('.html5-video-player');
+        fullscreenParent.appendChild(fullscreenBtnContainer);
+
         const remainingTimeParent = document.querySelector('.ytp-time-display');
-        defaultParent.prepend(pipBtn);
-        defaultParent.prepend(decreaseSpeedBtn);
-        defaultParent.prepend(increaseSpeedBtn);
-        defaultParent.prepend(speedBtn);
-        defaultFullscreenParent.prepend(labelSpeedFullscreen);
         remainingTimeParent.appendChild(remainingTime);
 
         updateSpeed(INITIAL_SPEED);
