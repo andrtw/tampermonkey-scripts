@@ -24,12 +24,12 @@ const CODE_ARROW_LEFT = 37;
 const CODE_ARROW_RIGHT = 39;
 
 function injectStyle(headElem) {
-    let css = `
+    const css = `
 .yt-btn {
   width: 40px;
   height: 40px;
   font-size: 10px;
-  background: #181818;
+  background: #272727;
   margin: 2px;
   outline: none;
   border: none;
@@ -38,8 +38,11 @@ function injectStyle(headElem) {
   cursor: pointer;
   font-family: "Roboto","Arial",sans-serif;
 }
+.yt-btn:hover {
+  background: #3f3f3f;
+}
 .yt-btn:active {
-  background: #303030;
+  background: #525252;
 }
 .label-speed {
   color: #fff;
