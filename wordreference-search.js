@@ -66,7 +66,7 @@ function injectStyle(headElem) {
   margin-bottom: 2px;
 }
 .wr-audio-icon {
-  background-image: url(https://www.wordreference.com/2012/style/sprite_2019.png?v=2);
+  background-image: url(https://www.wordreference.com/images/sprite_2022.webp?v=1);
   background-size: 160px 172px;
   background-position: -5px -117px;
   width: 23px;
