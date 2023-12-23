@@ -107,8 +107,7 @@ async function onDetailsOpened() {
 }
 
 const URLS_HANDLER = {
-    '^https://www.netflix.com/browse\\?jbv=\\S+$': onDetailsOpened,
-    '^https://www.netflix.com/browse/genre/\\S+\\?jbv=\\S+$': onDetailsOpened,
+    '^https://www.netflix.com/\\S+jbv=\\S+$': onDetailsOpened,
 };
 
 (function() {
