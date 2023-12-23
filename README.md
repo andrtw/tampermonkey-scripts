@@ -16,3 +16,7 @@ A collection of [Tampermonkey](https://www.tampermonkey.net/) scripts enabling c
 * Buttons to increase, decrease and reset the video playback speed
 * A label indicating the video remaining time according to the current playback speed
 * A button to toggle Picture-in-Picture mode
+
+## Netflix
+
+* Trakt link to the selected movie/show
