@@ -6,6 +6,7 @@
 // @author       You
 // @match        https://www.youtube.com/watch*
 // @match        https://www.youtube.com/shorts/*
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=youtube.com
 // @grant        none
 // ==/UserScript==
 
@@ -237,6 +238,16 @@ class RemainingTimeController {
                 fullscreenBtnContainer.classList.add('hidden');
             }
         });
+
+        const fastSpeedLabel = document.querySelector('.ytp-speedmaster-user-edu.ytp-speedmaster-has-icon');
+        const observer = new MutationObserver((mutations) => {
+            if (!mutations || !mutations.length) return;
+            const targetDisplay = mutations[0].target.style.display;
+            if (targetDisplay === 'none') {
+                updateSpeed(currentSpeed);
+            }
+        });
+        observer.observe(fastSpeedLabel, { attributes: true, attributefilter: ['style'] });
 
         const speedBtn = buildButton(video.playbackRate, resetSpeed);
         const decreaseSpeedBtn = buildIconButton(['fas', 'fa-minus'], decreaseSpeed);
