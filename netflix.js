@@ -35,6 +35,33 @@ function injectStyle(headElem) {
     headElem.appendChild(style);
 }
 
+function waitForElement(selector, predicate) {
+    function ensurePredicate(elem) {
+        if (!predicate) return true;
+        return predicate(elem);
+    }
+
+    return new Promise(resolve => {
+        const elem = document.querySelector(selector);
+        if (elem && ensurePredicate(elem)) {
+            return resolve(elem);
+        }
+
+        const observer = new MutationObserver(mutations => {
+            const elem = document.querySelector(selector);
+            if (elem && ensurePredicate(elem)) {
+                observer.disconnect();
+                resolve(elem);
+            }
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+        });
+    });
+}
+
 function traktRequest(url, config) {
     const c = {
         ...config,
@@ -56,12 +83,14 @@ async function searchTrakt(type, title) {
 }
 
 async function onDetailsOpened() {
-    function getSearchType() {
-        const isTvSeries = document.querySelector('.previewModal--section-header.episodeSelector-label') !== null;
-        if (isTvSeries) {
-            return 'show';
-        } else {
+    async function getSearchType() {
+        const durationElem = await waitForElement('.videoMetadata--container .duration');
+        const duration = durationElem.textContent;
+        const isMovie = /^\dh \d{1,2}m$/.test(duration);
+        if (isMovie) {
             return 'movie';
+        } else {
+            return 'show';
         }
     }
 
@@ -76,8 +105,9 @@ async function onDetailsOpened() {
         }
     }
 
-    const type = getSearchType();
-    const title = document.querySelector('.about-header strong').textContent;
+    const type = await getSearchType();
+    const titleElem = await waitForElement('.about-header strong', (elem) => elem?.textContent);
+    const title = titleElem.textContent;
     const results = await searchTrakt(type, title);
 
     const container = document.createElement('div');
