@@ -138,6 +138,7 @@ async function onDetailsOpened() {
 
 const URLS_HANDLER = {
     '^https://www.netflix.com/\\S+jbv=\\S+$': onDetailsOpened,
+    '^https://www.netflix.com/title/\\S+$': onDetailsOpened,
 };
 
 (function() {
