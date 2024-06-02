@@ -12,6 +12,11 @@
 const TRAKT_API_KEY = 'YOUR_API_KEY';
 const TRAKT_API_URL = 'https://api.trakt.tv';
 
+// Sometimes multiple movies with the same title are available, the only difference is the release year
+// which is reflected in the movie slug, eg: my-movie-1996 and my-movie-2024.
+// This flag tries to find the best match taking into account the release year too.
+const USE_LOOKUP_BY_YEAR = true;
+
 function injectStyle(headElem) {
     const css = `
 .ttv-logo {
@@ -100,6 +105,11 @@ async function onDetailsOpened() {
         }
     }
 
+    async function getYear() {
+        const yearElem = await waitForElement('.videoMetadata--container .year');
+        return yearElem.textContent;
+    }
+
     function getUrlPathFromType(type) {
         switch (type) {
             case 'show':
@@ -112,6 +122,7 @@ async function onDetailsOpened() {
     }
 
     const type = await getSearchType();
+    const year = await getYear();
     const titleElem = await waitForElement('.about-header strong', (elem) => elem?.textContent);
     const title = titleElem.textContent;
     const results = await searchTrakt(type, title);
@@ -125,7 +136,14 @@ async function onDetailsOpened() {
     traktLink.appendChild(traktLogo);
 
     if (results && results.length) {
-        const slug = results[0][type].ids.slug;
+        let result = undefined;
+        if (USE_LOOKUP_BY_YEAR) {
+            result = results.find(r => r[type].year == year);
+        } else {
+            result = results[0];
+        }
+        const slug = result[type].ids.slug;
+
         const typeUrlPath = getUrlPathFromType(type);
         const rating = await getRating(typeUrlPath, slug);
         const ratingPerc = Math.floor(rating.rating * 10);
