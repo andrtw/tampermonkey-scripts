@@ -76,8 +76,14 @@ function traktRequest(url, config) {
 }
 
 async function searchTrakt(type, title) {
-    const url = new URL('search/' + type, TRAKT_API_URL);
+    const url = new URL(`search/${type}`, TRAKT_API_URL);
     url.searchParams.append('query', title);
+    const response = await traktRequest(url, { method: 'GET' });
+    return response.json();
+}
+
+async function getRating(type, slug) {
+    const url = new URL(`${type}/${slug}/ratings`, TRAKT_API_URL);
     const response = await traktRequest(url, { method: 'GET' });
     return response.json();
 }
@@ -110,26 +116,29 @@ async function onDetailsOpened() {
     const title = titleElem.textContent;
     const results = await searchTrakt(type, title);
 
-    const container = document.createElement('div');
-    container.classList.add('previewModal--tags');
-
     const traktLogo = document.createElement('div');
     traktLogo.classList.add('ttv-logo');
 
     const traktLink = document.createElement('a');
     traktLink.classList.add('tag-item', 'ttv-link');
     traktLink.target = '_blank';
+    traktLink.appendChild(traktLogo);
 
     if (results && results.length) {
         const slug = results[0][type].ids.slug;
-        traktLink.href = `https://trakt.tv/${getUrlPathFromType(type)}/${slug}`;
+        const typeUrlPath = getUrlPathFromType(type);
+        const rating = await getRating(typeUrlPath, slug);
+        const ratingPerc = Math.floor(rating.rating * 10);
+        traktLink.href = `https://trakt.tv/${typeUrlPath}/${slug}`;
+        traktLink.appendChild(document.createTextNode(`Trakt | ${ratingPerc}%`));
     } else {
         const titleQuery = encodeURIComponent(title);
         traktLink.href = `https://trakt.tv/search?query=${titleQuery}`;
+        traktLink.appendChild(document.createTextNode('Trakt'));
     }
 
-    traktLink.appendChild(traktLogo);
-    traktLink.appendChild(document.createTextNode('Trakt'));
+    const container = document.createElement('div');
+    container.classList.add('previewModal--tags');
     container.appendChild(traktLink);
 
     const parent = document.querySelector('.previewModal--detailsMetadata-info div');
