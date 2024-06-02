@@ -138,7 +138,12 @@ async function onDetailsOpened() {
     if (results && results.length) {
         let result = undefined;
         if (USE_LOOKUP_BY_YEAR) {
-            result = results.find(r => r[type].year == year);
+            if (type === 'show') {
+                // Do not use year lookup for shows, as the year displayed is the last season's year but the year returned by APIs is the release year
+                result = results[0];
+            } else {
+                result = results.find(r => r[type].year == year);
+            }
         } else {
             result = results[0];
         }
