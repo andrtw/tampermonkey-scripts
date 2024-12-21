@@ -146,10 +146,6 @@ function buildLangSwitcherArrow(content, tooltipText, onClick) {
     }
   });
 
-  window.onfocus = () => {
-    q.focus();
-  };
-
   const lang = window.location.pathname.split("/")[1];
   const sourceLang = lang.substring(0, 2);
   const targetLang = lang.substring(2);
