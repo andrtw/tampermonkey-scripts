@@ -47,6 +47,15 @@ function injectStyle(headElem) {
 .wr-box-content {
   align-items: center;
 }
+.wr-close-btn {
+  position: absolute;
+  transform: rotate(45deg);
+  top: -2px;
+  right: 2px;
+  font-size: 16px;
+  color: #0000006b;
+  cursor: pointer;
+}
 .wr-box-content-right {
   display: flex;
   flex-direction: column;
@@ -147,6 +156,7 @@ class BoxController {
     this.boxElem = this.#buildBoxElem();
     this.loadingElem = this.#buildLoadingElem();
     this.contentElem = this.#buildContentElem();
+    this.closeBtn = this.#buildCloseBtn();
   }
 
   get isOpen() {
@@ -156,6 +166,7 @@ class BoxController {
   get box() {
     this.boxElem.appendChild(this.loadingElem);
     this.boxElem.appendChild(this.contentElem);
+    this.boxElem.appendChild(this.closeBtn);
     return this.boxElem;
   }
 
@@ -222,11 +233,20 @@ class BoxController {
     return loadingElem;
   }
 
+  #buildCloseBtn() {
+    const closeBtn = document.createElement("span");
+    closeBtn.classList.add("wr-close-btn");
+    closeBtn.appendChild(document.createTextNode("+"));
+    closeBtn.onclick = (e) => this.close();
+    return closeBtn;
+  }
+
   #open(x, y) {
     if (this.#isOpen) return;
 
     this.loadingElem.style.display = "block";
     this.contentElem.style.display = "none";
+    this.closeBtn.style.display = "none";
 
     this.boxElem.style.top = `${y || 0}px`;
     this.boxElem.style.left = `${x || 0}px`;
@@ -238,6 +258,7 @@ class BoxController {
   #populateBox(term, pron, audioUrl) {
     this.loadingElem.style.display = "none";
     this.contentElem.style.display = "flex";
+    this.closeBtn.style.display = "block";
 
     const logoElem = document.createElement("div");
     logoElem.classList.add("wr-logo");
