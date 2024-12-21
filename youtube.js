@@ -14,7 +14,7 @@ const TIMEOUT = 2000;
 
 const INCREASE_STEP = 0.25;
 const DECREASE_STEP = 0.25;
-const INITIAL_SPEED = 1.50;
+const INITIAL_SPEED = 1.5;
 const DEFAULT_SPEED = 1;
 const MIN_SPEED = 0.25;
 const MAX_SPEED = 16;
@@ -25,7 +25,7 @@ const CODE_ARROW_LEFT = 37;
 const CODE_ARROW_RIGHT = 39;
 
 function injectStyle(headElem) {
-    const css = `
+  const css = `
 .yt-btn {
   width: 40px;
   height: 40px;
@@ -72,211 +72,244 @@ function injectStyle(headElem) {
   display: none;
 }
 `;
-    const style = document.createElement('style');
-    if (style.styleSheet) {
-        style.styleSheet.cssText = css;
-    } else {
-        style.appendChild(document.createTextNode(css));
-    }
-    headElem.appendChild(style);
+  const style = document.createElement("style");
+  if (style.styleSheet) {
+    style.styleSheet.cssText = css;
+  } else {
+    style.appendChild(document.createTextNode(css));
+  }
+  headElem.appendChild(style);
 }
 
 function injectFontAwesome(headElem) {
-    const script = document.createElement('script');
-    script.src = 'https://kit.fontawesome.com/52842ab63c.js';
-    headElem.appendChild(script);
+  const script = document.createElement("script");
+  script.src = "https://kit.fontawesome.com/52842ab63c.js";
+  headElem.appendChild(script);
 }
 
 function buildButton(text, onClick) {
-    const btn = document.createElement('button');
-    btn.classList.add('yt-btn');
-    btn.appendChild(document.createTextNode(text));
-    btn.onclick = onClick;
-    return btn;
+  const btn = document.createElement("button");
+  btn.classList.add("yt-btn");
+  btn.appendChild(document.createTextNode(text));
+  btn.onclick = onClick;
+  return btn;
 }
 
 function buildIconButton(iconStyle, onClick) {
-    const btn = buildButton('', onClick);
-    const i = document.createElement('i');
-    iconStyle.forEach((style) => i.classList.add(style));
-    btn.appendChild(i);
-    return btn;
+  const btn = buildButton("", onClick);
+  const i = document.createElement("i");
+  iconStyle.forEach((style) => i.classList.add(style));
+  btn.appendChild(i);
+  return btn;
 }
 
 class RemainingTimeController {
-    #remainingTimeId;
+  #remainingTimeId;
 
-    constructor(video, remainingTimeElem, moviePlayerElem) {
-        this.video = video;
-        this.remainingTimeElem = remainingTimeElem;
-        this.moviePlayerElem = moviePlayerElem;
+  constructor(video, remainingTimeElem, moviePlayerElem) {
+    this.video = video;
+    this.remainingTimeElem = remainingTimeElem;
+    this.moviePlayerElem = moviePlayerElem;
+  }
+
+  updateRemainingTime() {
+    const time =
+      (this.video.duration - this.video.currentTime) / this.video.playbackRate;
+
+    const s = Math.floor(time % 60);
+    const m = Math.floor((time / 60) % 60);
+    const h = Math.floor((time / (60 * 60)) % 24);
+
+    const timeFormatted = this.#formatTime(h, m, s);
+    this.remainingTimeElem.innerHTML = timeFormatted;
+
+    const isBottomBarHidden =
+      this.moviePlayerElem.classList.contains("ytp-autohide");
+    if (isBottomBarHidden || this.video.paused) {
+      this.stopUpdating();
     }
+  }
 
-    updateRemainingTime() {
-        const time = (this.video.duration - this.video.currentTime) / this.video.playbackRate;
-
-        const s = Math.floor(time % 60);
-        const m = Math.floor((time / 60) % 60);
-        const h = Math.floor((time / (60 * 60)) % 24);
-
-        const timeFormatted = this.#formatTime(h, m, s);
-        this.remainingTimeElem.innerHTML = timeFormatted;
-
-        const isBottomBarHidden = this.moviePlayerElem.classList.contains('ytp-autohide');
-        if (isBottomBarHidden || this.video.paused) {
-            this.stopUpdating();
-        }
+  startUpdating() {
+    if (this.#remainingTimeId !== undefined) {
+      return;
     }
+    this.updateRemainingTime();
+    this.#remainingTimeId = setInterval(
+      this.updateRemainingTime.bind(this),
+      1000,
+    );
+  }
 
-    startUpdating() {
-        if (this.#remainingTimeId !== undefined) {
-            return;
-        }
-        this.updateRemainingTime();
-        this.#remainingTimeId = setInterval(this.updateRemainingTime.bind(this), 1000);
+  stopUpdating() {
+    if (this.#remainingTimeId === undefined) {
+      return;
     }
+    clearInterval(this.#remainingTimeId);
+    this.#remainingTimeId = undefined;
+    this.updateRemainingTime();
+  }
 
-    stopUpdating() {
-        if (this.#remainingTimeId === undefined) {
-            return;
-        }
-        clearInterval(this.#remainingTimeId);
-        this.#remainingTimeId = undefined;
-        this.updateRemainingTime();
+  #formatTime(hours, minutes, seconds) {
+    let formatted = "-";
+    if (hours > 0) {
+      formatted += `${hours}:${minutes.toString().padStart(2, "0")}:`;
+    } else {
+      formatted += `${minutes}:`;
     }
-
-    #formatTime(hours, minutes, seconds) {
-        let formatted = '-';
-        if (hours > 0) {
-            formatted += `${hours}:${minutes.toString().padStart(2, '0')}:`;
-        } else {
-            formatted += `${minutes}:`;
-        }
-        formatted += `${seconds.toString().padStart(2, '0')}`;
-        return formatted;
-    }
+    formatted += `${seconds.toString().padStart(2, "0")}`;
+    return formatted;
+  }
 }
 
-(function() {
-    'use strict';
+(function () {
+  "use strict";
 
-    setTimeout(function() {
-        const head = document.querySelector('head');
-        injectStyle(head);
-        injectFontAwesome(head);
+  setTimeout(function () {
+    const head = document.querySelector("head");
+    injectStyle(head);
+    injectFontAwesome(head);
 
-        const video = document.querySelector('video');
-        const moviePlayer = document.querySelector('#movie_player');
-        const remainingTime = document.createElement('span');
-        remainingTime.classList.add('label-time-remaining');
+    const video = document.querySelector("video");
+    const moviePlayer = document.querySelector("#movie_player");
+    const remainingTime = document.createElement("span");
+    remainingTime.classList.add("label-time-remaining");
 
-        const remainingTimeController = new RemainingTimeController(video, remainingTime, moviePlayer);
+    const remainingTimeController = new RemainingTimeController(
+      video,
+      remainingTime,
+      moviePlayer,
+    );
 
-        let currentSpeed = video.playbackRate;
+    let currentSpeed = video.playbackRate;
 
-        video.onmouseenter = (e) => {
-            if (video.paused) return;
-            remainingTimeController.startUpdating();
-        };
-        video.onmousemove = (e) => {
-            if (video.paused) return;
-            remainingTimeController.startUpdating();
-        };
-        video.onplay = (e) => { remainingTimeController.startUpdating(); };
-        video.onpause = (e) => { remainingTimeController.stopUpdating(); };
-        video.onseeked = (e) => { remainingTimeController.startUpdating(); };
+    video.onmouseenter = () => {
+      if (video.paused) return;
+      remainingTimeController.startUpdating();
+    };
+    video.onmousemove = () => {
+      if (video.paused) return;
+      remainingTimeController.startUpdating();
+    };
+    video.onplay = () => {
+      remainingTimeController.startUpdating();
+    };
+    video.onpause = () => {
+      remainingTimeController.stopUpdating();
+    };
+    video.onseeked = () => {
+      remainingTimeController.startUpdating();
+    };
 
-        function updateSpeed(targetSpeed) {
-            const speed = Math.min(Math.max(targetSpeed, MIN_SPEED), MAX_SPEED);
-            currentSpeed = speed;
-            video.playbackRate = speed;
-            speedBtn.innerHTML = speed;
-            fullscreenSpeedBtn.innerHTML = speed;
-            remainingTimeController.updateRemainingTime();
+    function updateSpeed(targetSpeed) {
+      const speed = Math.min(Math.max(targetSpeed, MIN_SPEED), MAX_SPEED);
+      currentSpeed = speed;
+      video.playbackRate = speed;
+      speedBtn.innerHTML = speed;
+      fullscreenSpeedBtn.innerHTML = speed;
+      remainingTimeController.updateRemainingTime();
+    }
+
+    function increaseSpeed() {
+      updateSpeed(video.playbackRate + INCREASE_STEP);
+    }
+
+    function decreaseSpeed() {
+      updateSpeed(video.playbackRate - DECREASE_STEP);
+    }
+
+    function resetSpeed() {
+      updateSpeed(DEFAULT_SPEED);
+    }
+
+    function togglePip() {
+      if (!document.pictureInPictureEnabled) {
+        alert("Picture-in-picture mode not available.");
+        return;
+      }
+      if (document.pictureInPictureElement) {
+        document.exitPictureInPicture();
+      } else {
+        video.requestPictureInPicture();
+      }
+    }
+
+    window.addEventListener("keydown", (e) => {
+      const key = e.keyCode;
+
+      if (e.ctrlKey && e.altKey) {
+        if (key === CODE_ARROW_UP) {
+          increaseSpeed();
+        } else if (key === CODE_ARROW_DOWN) {
+          decreaseSpeed();
         }
+      }
+    });
 
-        function increaseSpeed() {
-            updateSpeed(video.playbackRate + INCREASE_STEP);
-        }
+    document.addEventListener("fullscreenchange", () => {
+      if (document.fullscreenElement) {
+        fullscreenBtnContainer.classList.remove("hidden");
+      } else {
+        fullscreenBtnContainer.classList.add("hidden");
+      }
+    });
 
-        function decreaseSpeed() {
-            updateSpeed(video.playbackRate - DECREASE_STEP);
-        }
+    const fastSpeedLabel = document.querySelector(
+      ".ytp-speedmaster-user-edu.ytp-speedmaster-has-icon",
+    );
+    const observer = new MutationObserver((mutations) => {
+      if (!mutations || !mutations.length) return;
+      const targetDisplay = mutations[0].target.style.display;
+      if (targetDisplay === "none") {
+        updateSpeed(currentSpeed);
+      }
+    });
+    observer.observe(fastSpeedLabel, {
+      attributes: true,
+      attributefilter: ["style"],
+    });
 
-        function resetSpeed() {
-            updateSpeed(DEFAULT_SPEED);
-        }
+    const speedBtn = buildButton(video.playbackRate, resetSpeed);
+    const decreaseSpeedBtn = buildIconButton(
+      ["fas", "fa-minus"],
+      decreaseSpeed,
+    );
+    const increaseSpeedBtn = buildIconButton(["fas", "fa-plus"], increaseSpeed);
 
-        function togglePip() {
-            if (!document.pictureInPictureEnabled) {
-                alert('Picture-in-picture mode not available.');
-                return;
-            }
-            if (document.pictureInPictureElement) {
-                document.exitPictureInPicture();
-            } else {
-                video.requestPictureInPicture();
-            }
-        }
+    const fullscreenSpeedBtn = buildButton(video.playbackRate, resetSpeed);
+    const fullscreenDecreaseSpeedBtn = buildIconButton(
+      ["fas", "fa-minus"],
+      decreaseSpeed,
+    );
+    const fullscreenIncreaseSpeedBtn = buildIconButton(
+      ["fas", "fa-plus"],
+      increaseSpeed,
+    );
 
-        window.addEventListener('keydown', (e) => {
-            const key = e.keyCode;
+    const pipBtn = buildIconButton(["fas", "fa-clone"], togglePip);
+    pipBtn.classList.add("last-btn");
 
-            if (e.ctrlKey && e.altKey) {
-                if (key === CODE_ARROW_UP) {
-                    increaseSpeed();
-                } else if (key === CODE_ARROW_DOWN) {
-                    decreaseSpeed();
-                }
-            }
-        });
+    const btnParent = document.querySelector("#end");
+    btnParent.prepend(pipBtn);
+    btnParent.prepend(decreaseSpeedBtn);
+    btnParent.prepend(increaseSpeedBtn);
+    btnParent.prepend(speedBtn);
 
-        document.addEventListener('fullscreenchange', (e) => {
-            if (document.fullscreenElement) {
-                fullscreenBtnContainer.classList.remove('hidden');
-            } else {
-                fullscreenBtnContainer.classList.add('hidden');
-            }
-        });
+    const fullscreenBtnContainer = document.createElement("div");
+    fullscreenBtnContainer.classList.add(
+      "hidden",
+      "fullscreen-btn-container",
+      "ytp-chrome-bottom",
+    );
+    fullscreenBtnContainer.appendChild(fullscreenSpeedBtn);
+    fullscreenBtnContainer.appendChild(fullscreenIncreaseSpeedBtn);
+    fullscreenBtnContainer.appendChild(fullscreenDecreaseSpeedBtn);
+    const fullscreenParent = document.querySelector(".html5-video-player");
+    fullscreenParent.appendChild(fullscreenBtnContainer);
 
-        const fastSpeedLabel = document.querySelector('.ytp-speedmaster-user-edu.ytp-speedmaster-has-icon');
-        const observer = new MutationObserver((mutations) => {
-            if (!mutations || !mutations.length) return;
-            const targetDisplay = mutations[0].target.style.display;
-            if (targetDisplay === 'none') {
-                updateSpeed(currentSpeed);
-            }
-        });
-        observer.observe(fastSpeedLabel, { attributes: true, attributefilter: ['style'] });
+    const remainingTimeParent = document.querySelector(".ytp-time-display");
+    remainingTimeParent.appendChild(remainingTime);
 
-        const speedBtn = buildButton(video.playbackRate, resetSpeed);
-        const decreaseSpeedBtn = buildIconButton(['fas', 'fa-minus'], decreaseSpeed);
-        const increaseSpeedBtn = buildIconButton(['fas', 'fa-plus'], increaseSpeed);
-
-        const fullscreenSpeedBtn = buildButton(video.playbackRate, resetSpeed);
-        const fullscreenDecreaseSpeedBtn = buildIconButton(['fas', 'fa-minus'], decreaseSpeed);
-        const fullscreenIncreaseSpeedBtn = buildIconButton(['fas', 'fa-plus'], increaseSpeed);
-
-        const pipBtn = buildIconButton(['fas', 'fa-clone'], togglePip);
-        pipBtn.classList.add('last-btn');
-
-        const btnParent = document.querySelector('#end');
-        btnParent.prepend(pipBtn);
-        btnParent.prepend(decreaseSpeedBtn);
-        btnParent.prepend(increaseSpeedBtn);
-        btnParent.prepend(speedBtn);
-
-        const fullscreenBtnContainer = document.createElement('div');
-        fullscreenBtnContainer.classList.add('hidden', 'fullscreen-btn-container', 'ytp-chrome-bottom');
-        fullscreenBtnContainer.appendChild(fullscreenSpeedBtn);
-        fullscreenBtnContainer.appendChild(fullscreenIncreaseSpeedBtn);
-        fullscreenBtnContainer.appendChild(fullscreenDecreaseSpeedBtn);
-        const fullscreenParent = document.querySelector('.html5-video-player');
-        fullscreenParent.appendChild(fullscreenBtnContainer);
-
-        const remainingTimeParent = document.querySelector('.ytp-time-display');
-        remainingTimeParent.appendChild(remainingTime);
-
-        updateSpeed(INITIAL_SPEED);
-    }, TIMEOUT);
+    updateSpeed(INITIAL_SPEED);
+  }, TIMEOUT);
 })();
