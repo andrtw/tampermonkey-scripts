@@ -38,7 +38,7 @@ function injectStyle(headElem) {
   line-height: 14px;
 }
 .wr-logo {
-  background-image: url(https://www.wordreference.com/favicons/favicon.ico);
+  background-image: url(https://www.wordreference.com/favicon.ico);
   background-size: contain;
   width: 18px;
   height: 18px;
