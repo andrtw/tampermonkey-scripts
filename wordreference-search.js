@@ -5,13 +5,6 @@
 // @description  try to take over the world!
 // @author       You
 // @match        *://*/*
-// @exclude      https://play.kotlinlang.org/*
-// @exclude      https://dartpad.dev/*
-// @exclude      https://regex101.com/*
-// @exclude      https://leetcode.com/*
-// @exclude      https://app-eu.codility.com/*
-// @exclude      https://*.karat.io/*
-// @exclude      https://www.hackerrank.com/challenges/*
 // @grant        none
 // ==/UserScript==
 
