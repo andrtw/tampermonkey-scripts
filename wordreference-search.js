@@ -10,7 +10,8 @@
 
 const BASE_URL = "https://www.wordreference.com";
 const CODE_ESC = 27;
-const LANG = "enit"; // English to Italian
+const LANG = "enit";
+const AUDIO_SEARCH_TERM = "uk/general";
 
 function log(message, data) {
   if (data) {
@@ -288,8 +289,11 @@ class BoxController {
 
   #getAudioUrl(scriptString) {
     if (!scriptString) return undefined;
-    const urls = scriptString.match(/('\/).*(mp3')/)[0]?.split(",");
-    return urls[0]?.replace(/'/g, "");
+    const urls = scriptString
+      .match(/('\/).*(mp3')/)[0]
+      ?.split(",")
+      ?.map((url) => url.replace(/'/g, ""));
+    return urls.find((url) => url.includes(AUDIO_SEARCH_TERM));
   }
 }
 
