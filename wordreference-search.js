@@ -237,7 +237,7 @@ class BoxController {
     const closeBtn = document.createElement("span");
     closeBtn.classList.add("wr-close-btn");
     closeBtn.appendChild(document.createTextNode("+"));
-    closeBtn.onclick = (e) => this.close();
+    closeBtn.onclick = () => this.close();
     return closeBtn;
   }
 
@@ -262,9 +262,7 @@ class BoxController {
 
     const logoElem = document.createElement("div");
     logoElem.classList.add("wr-logo");
-    logoElem.onclick = (e) => {
-      window.open(`${BASE_URL}/${LANG}/${term}`);
-    };
+    logoElem.onclick = () => window.open(`${BASE_URL}/${LANG}/${term}`);
 
     const rightColElem = document.createElement("div");
     rightColElem.classList.add("wr-box-content-right");
@@ -281,7 +279,7 @@ class BoxController {
     if (audioUrl) {
       const icon = document.createElement("div");
       icon.classList.add("wr-audio-icon");
-      icon.onclick = (e) => {
+      icon.onclick = () => {
         const audio = new Audio(BASE_URL + audioUrl);
         audio.play();
       };
@@ -333,7 +331,12 @@ class BoxController {
     }
   };
 
-  document.onmousedown = (e) => {
+  document.onmousedown = () => {
+    boxController.close();
+    clearSelection();
+  };
+
+  document.onscroll = () => {
     boxController.close();
     clearSelection();
   };
