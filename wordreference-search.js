@@ -1,9 +1,8 @@
 // ==UserScript==
 // @name         WordReference search
-// @namespace    http://tampermonkey.net/
-// @version      0.1
-// @description  try to take over the world!
-// @author       You
+// @namespace    andrtw
+// @version      1
+// @author       andrtw
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
