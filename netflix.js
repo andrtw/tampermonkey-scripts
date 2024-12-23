@@ -23,8 +23,7 @@ function injectStyle(headElem) {
   margin-right: 4px;
   width: 20px;
   height: 20px;
-  background: url("https://walter.trakt.tv/hotlink-ok/public/favicon.svg");
-  filter: invert(26%) sepia(87%) saturate(2019%) hue-rotate(345deg) brightness(94%) contrast(82%);
+  background: url("https://walter-r2.trakt.tv/hotlink-ok/public/2024/favicon.svg");
 }
 .ttv-link {
   display: inline-flex;
