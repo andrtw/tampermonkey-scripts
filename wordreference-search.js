@@ -331,14 +331,18 @@ class BoxController {
     }
   };
 
-  document.onmousedown = () => {
-    boxController.close();
-    clearSelection();
+  document.onmouseup = () => {
+    if (boxController.isOpen) {
+      boxController.close();
+      clearSelection();
+    }
   };
 
   document.onscroll = () => {
-    boxController.close();
-    clearSelection();
+    if (boxController.isOpen) {
+      boxController.close();
+      clearSelection();
+    }
   };
 
   document.onkeydown = (e) => {
