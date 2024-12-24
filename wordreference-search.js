@@ -30,7 +30,7 @@ function injectStyle(headElem) {
   background: #fff;
   box-shadow: 0 12px 48px rgb(109 117 141 / 20%);
   border-radius: 8px;
-  padding: 4px 6px;
+  padding: 4px 12px 4px 6px;
   position: absolute;
   z-index: 2147483644;
   align-items: center;
