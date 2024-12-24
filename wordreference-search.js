@@ -330,7 +330,7 @@ class BoxController {
     }
   };
 
-  document.onmouseup = () => {
+  document.onmousedown = () => {
     if (boxController.isOpen) {
       boxController.close();
       clearSelection();
