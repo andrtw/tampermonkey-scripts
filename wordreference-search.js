@@ -122,18 +122,6 @@ function getSelectedText() {
   return undefined;
 }
 
-function clearSelection() {
-  if (window.getSelection) {
-    if (window.getSelection().empty) {
-      window.getSelection().empty();
-    } else if (window.getSelection().removeAllRanges) {
-      window.getSelection().removeAllRanges();
-    }
-  } else if (document.selection) {
-    document.selection.empty();
-  }
-}
-
 class BoxController {
   #isOpen = false;
 
@@ -309,21 +297,18 @@ class BoxController {
   document.onmousedown = () => {
     if (boxController.isOpen) {
       boxController.close();
-      clearSelection();
     }
   };
 
   document.onscroll = () => {
     if (boxController.isOpen) {
       boxController.close();
-      clearSelection();
     }
   };
 
   document.onkeydown = (e) => {
     if (boxController.isOpen && e.keyCode === CODE_ESC) {
       boxController.close();
-      clearSelection();
     }
   };
 })();
