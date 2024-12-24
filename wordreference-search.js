@@ -75,23 +75,6 @@ function injectStyle(headElem) {
   height: 16px;
   cursor: pointer;
 }
-.wr-loading,
-.wr-loading:after {
-  border-radius: 50%;
-  width: 10em;
-  height: 10em;
-}
-.wr-loading {
-  width: 16px;
-  height: 16px;
-  border: 2px solid #ddd;
-  border-left: 2px solid rgb(0, 0, 0, 0);
-  -webkit-transform: translateZ(0);
-  -ms-transform: translateZ(0);
-  transform: translateZ(0);
-  -webkit-animation: rotate 1.1s infinite linear;
-  animation: rotate 1.1s infinite linear;
-}
 @-webkit-keyframes rotate {
   0% {
     -webkit-transform: rotate(0deg);
@@ -153,7 +136,6 @@ class BoxController {
 
   constructor() {
     this.boxElem = this.#buildBoxElem();
-    this.loadingElem = this.#buildLoadingElem();
     this.contentElem = this.#buildContentElem();
     this.closeBtn = this.#buildCloseBtn();
   }
@@ -163,7 +145,6 @@ class BoxController {
   }
 
   get box() {
-    this.boxElem.appendChild(this.loadingElem);
     this.boxElem.appendChild(this.contentElem);
     this.boxElem.appendChild(this.closeBtn);
     return this.boxElem;
@@ -171,8 +152,6 @@ class BoxController {
 
   searchTerm(term, x, y) {
     if (!term) return;
-
-    this.#open(x, y);
 
     fetch(`${BASE_URL}/${LANG}/${term}`)
       .then((response) => response.text())
@@ -196,6 +175,7 @@ class BoxController {
         const audioUrl = this.#getAudioUrl(
           dom.querySelector("#listen_widget script")?.text,
         );
+        this.#open(x, y);
         this.#populateBox(word, pron, audioUrl);
       })
       .catch((error) => log("Error calling WordReference", error));
@@ -226,12 +206,6 @@ class BoxController {
     return boxContentElem;
   }
 
-  #buildLoadingElem() {
-    const loadingElem = document.createElement("span");
-    loadingElem.classList.add("wr-loading");
-    return loadingElem;
-  }
-
   #buildCloseBtn() {
     const closeBtn = document.createElement("span");
     closeBtn.classList.add("wr-close-btn");
@@ -243,7 +217,6 @@ class BoxController {
   #open(x, y) {
     if (this.#isOpen) return;
 
-    this.loadingElem.style.display = "block";
     this.contentElem.style.display = "none";
     this.closeBtn.style.display = "none";
 
@@ -255,7 +228,6 @@ class BoxController {
   }
 
   #populateBox(term, pron, audioUrl) {
-    this.loadingElem.style.display = "none";
     this.contentElem.style.display = "flex";
     this.closeBtn.style.display = "block";
 
