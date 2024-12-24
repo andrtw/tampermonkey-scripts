@@ -179,7 +179,7 @@ class BoxController {
           dom.querySelector("#listen_widget script")?.text,
         );
         this.#open(x, y);
-        this.#populateBox(word, pronunciatio, audioUrl);
+        this.#populateBox(word, pronunciation, audioUrl);
       })
       .catch((error) => log("Error calling WordReference", error));
   }
