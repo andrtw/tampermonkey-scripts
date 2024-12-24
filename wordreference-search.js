@@ -144,7 +144,7 @@ class BoxController {
   searchTerm(term, x, y) {
     if (!term) return;
 
-    fetch(`${BASE_URL}/${LANG}/${term}`)
+    fetch(`${BASE_URL}/${LANG}/${term.toLowerCase()}`)
       .then((response) => response.text())
       .then((html) => {
         const dom = new DOMParser().parseFromString(html, "text/html");
@@ -224,7 +224,8 @@ class BoxController {
 
     const logoElem = document.createElement("div");
     logoElem.classList.add("wr-logo");
-    logoElem.onclick = () => window.open(`${BASE_URL}/${LANG}/${term}`);
+    logoElem.onclick = () =>
+      window.open(`${BASE_URL}/${LANG}/${term.toLowerCase()}`);
 
     const rightColElem = document.createElement("div");
     rightColElem.classList.add("wr-box-content-right");
