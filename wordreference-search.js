@@ -13,7 +13,7 @@ const LANG = "enit";
 const AUDIO_SEARCH_TERM = "uk/general";
 
 // Shows the pronunciation text
-const FEATURE_PRONUNCIATION = true;
+const FEATURE_PRONUNCIATION = false;
 
 function log(message, data) {
   if (data) {
