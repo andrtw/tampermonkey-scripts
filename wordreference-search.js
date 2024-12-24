@@ -12,6 +12,9 @@ const CODE_ESC = 27;
 const LANG = "enit";
 const AUDIO_SEARCH_TERM = "uk/general";
 
+// Shows the pronunciation text
+const FEATURE_PRONUNCIATION = true;
+
 function log(message, data) {
   if (data) {
     console.log(message, data);
@@ -169,14 +172,14 @@ class BoxController {
           headerWordElem.childElementCount > 0
             ? headerWordElem.childNodes[0].innerHTML
             : headerWordElem.innerHTML;
-        const pron = this.#getPronunciation(
+        const pronunciation = this.#getPronunciationText(
           dom.querySelector("#pronunciation_widget"),
         );
         const audioUrl = this.#getAudioUrl(
           dom.querySelector("#listen_widget script")?.text,
         );
         this.#open(x, y);
-        this.#populateBox(word, pron, audioUrl);
+        this.#populateBox(word, pronunciatio, audioUrl);
       })
       .catch((error) => log("Error calling WordReference", error));
   }
@@ -227,7 +230,7 @@ class BoxController {
     this.#isOpen = true;
   }
 
-  #populateBox(term, pron, audioUrl) {
+  #populateBox(term, pronunciation, audioUrl) {
     this.contentElem.style.display = "flex";
     this.closeBtn.style.display = "block";
 
@@ -238,13 +241,13 @@ class BoxController {
     const rightColElem = document.createElement("div");
     rightColElem.classList.add("wr-box-content-right");
 
-    if (!pron && !audioUrl) {
+    if (!pronunciation && !audioUrl) {
       rightColElem.style.display = "none";
     }
-    if (pron) {
+    if (pronunciation) {
       const p = document.createElement("span");
       p.classList.add("wr-pron");
-      p.innerHTML = pron;
+      p.innerHTML = pronunciation;
       rightColElem.appendChild(p);
     }
     if (audioUrl) {
@@ -262,7 +265,8 @@ class BoxController {
     this.contentElem.appendChild(rightColElem);
   }
 
-  #getPronunciation(pronElem) {
+  #getPronunciationText(pronElem) {
+    if (!FEATURE_PRONUNCIATION) return undefined;
     if (!pronElem) return undefined;
 
     const deleteElems = pronElem.querySelectorAll(
