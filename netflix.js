@@ -14,7 +14,7 @@ const TRAKT_API_URL = "https://api.trakt.tv";
 const TYPE_MOVIE = "movie";
 const TYPE_SHOW = "show";
 
-const TTV_URL_PATHS = {
+const TRAKT_URL_PATHS = {
   [TYPE_MOVIE]: "movies",
   [TYPE_SHOW]: "shows",
 };
@@ -168,7 +168,7 @@ async function onDetailsOpened() {
     }
     const slug = result[type].ids.slug;
 
-    const urlPath = TTV_URL_PATHS[type];
+    const urlPath = TRAKT_URL_PATHS[type];
     const ratingRes = await getRating(urlPath, slug);
     const ratingPerc = Math.floor(ratingRes.rating * 10);
     traktLink.href = `https://trakt.tv/${urlPath}/${slug}`;
