@@ -11,6 +11,14 @@
 const TRAKT_API_KEY = "YOUR_API_KEY";
 const TRAKT_API_URL = "https://api.trakt.tv";
 
+const TYPE_MOVIE = "movie";
+const TYPE_SHOW = "show";
+
+const TTV_URL_PATHS = {
+  [TYPE_MOVIE]: "movies",
+  [TYPE_SHOW]: "shows",
+};
+
 // Sometimes multiple movies with the same title are available, the only difference is the release year
 // which is reflected in the movie slug, eg: my-movie-1996 and my-movie-2024.
 // This flag tries to find the best match taking into account the release year too.
@@ -99,9 +107,9 @@ async function onDetailsOpened() {
     const duration = durationElem.textContent;
     const isMovie = /^\dh(\s\d{1,2}m)?$/.test(duration);
     if (isMovie) {
-      return "movie";
+      return TYPE_MOVIE;
     } else {
-      return "show";
+      return TYPE_SHOW;
     }
   }
 
@@ -111,7 +119,6 @@ async function onDetailsOpened() {
   }
 
   function formatVotesNumber(votes) {
-    console.log("Votes", votes);
     let factor = 0;
     if (votes >= 100000) {
       factor = 1000;
@@ -128,17 +135,6 @@ async function onDetailsOpened() {
         return `.${p1}k`;
       }
     });
-  }
-
-  function getUrlPathFromType(type) {
-    switch (type) {
-      case "show":
-        return "shows";
-      case "movie":
-        return "movies";
-      default:
-        throw new Error("Cannot get url path from type");
-    }
   }
 
   const type = await getSearchType();
@@ -172,10 +168,10 @@ async function onDetailsOpened() {
     }
     const slug = result[type].ids.slug;
 
-    const typeUrlPath = getUrlPathFromType(type);
-    const ratingRes = await getRating(typeUrlPath, slug);
+    const urlPath = TTV_URL_PATHS[type];
+    const ratingRes = await getRating(urlPath, slug);
     const ratingPerc = Math.floor(ratingRes.rating * 10);
-    traktLink.href = `https://trakt.tv/${typeUrlPath}/${slug}`;
+    traktLink.href = `https://trakt.tv/${urlPath}/${slug}`;
     traktLink.appendChild(
       document.createTextNode(
         `Trakt | ${ratingPerc}% · ${formatVotesNumber(ratingRes.votes)} votes`,
