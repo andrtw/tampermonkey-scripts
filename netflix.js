@@ -99,25 +99,7 @@ async function getRating(type, slug) {
   return response.json();
 }
 
-async function onDetailsOpened() {
-  async function getSearchType() {
-    const durationElem = await waitForElement(
-      ".videoMetadata--container .duration",
-    );
-    const duration = durationElem.textContent;
-    const isMovie = /^\dh(\s\d{1,2}m)?$/.test(duration);
-    if (isMovie) {
-      return TYPE_MOVIE;
-    } else {
-      return TYPE_SHOW;
-    }
-  }
-
-  async function getYear() {
-    const yearElem = await waitForElement(".videoMetadata--container .year");
-    return yearElem.textContent;
-  }
-
+function buildTraktLink(href, rating, votes) {
   function formatVotesNumber(votes) {
     let factor = 0;
     if (votes >= 100000) {
@@ -137,6 +119,52 @@ async function onDetailsOpened() {
     });
   }
 
+  const traktLink = document.createElement("a");
+  traktLink.classList.add("tag-item", "ttv-link");
+  traktLink.target = "_blank";
+  traktLink.href = href;
+
+  const traktLogo = document.createElement("div");
+  traktLogo.classList.add("ttv-logo");
+  traktLink.appendChild(traktLogo);
+
+  const infoList = [];
+  if (rating) {
+    infoList.push(`${rating}%`);
+  }
+  if (votes) {
+    infoList.push(`${formatVotesNumber(votes)} votes`);
+  }
+
+  let text = "Trakt";
+  if (infoList.length) {
+    const info = infoList.join(" · ");
+    text += " | " + info;
+  }
+
+  traktLink.appendChild(document.createTextNode(text));
+  return traktLink;
+}
+
+async function onDetailsOpened() {
+  async function getSearchType() {
+    const durationElem = await waitForElement(
+      ".videoMetadata--container .duration",
+    );
+    const duration = durationElem.textContent;
+    const isMovie = /^\dh(\s\d{1,2}m)?$/.test(duration);
+    if (isMovie) {
+      return TYPE_MOVIE;
+    } else {
+      return TYPE_SHOW;
+    }
+  }
+
+  async function getYear() {
+    const yearElem = await waitForElement(".videoMetadata--container .year");
+    return yearElem.textContent;
+  }
+
   const type = await getSearchType();
   const year = await getYear();
   const titleElem = await waitForElement(
@@ -146,14 +174,7 @@ async function onDetailsOpened() {
   const title = titleElem.textContent;
   const results = await searchTrakt(type, title);
 
-  const traktLogo = document.createElement("div");
-  traktLogo.classList.add("ttv-logo");
-
-  const traktLink = document.createElement("a");
-  traktLink.classList.add("tag-item", "ttv-link");
-  traktLink.target = "_blank";
-  traktLink.appendChild(traktLogo);
-
+  let traktLink;
   if (results && results.length) {
     let result = undefined;
     if (USE_LOOKUP_BY_YEAR) {
@@ -171,16 +192,19 @@ async function onDetailsOpened() {
     const urlPath = TRAKT_URL_PATHS[type];
     const ratingRes = await getRating(urlPath, slug);
     const ratingPerc = Math.floor(ratingRes.rating * 10);
-    traktLink.href = `https://trakt.tv/${urlPath}/${slug}`;
-    traktLink.appendChild(
-      document.createTextNode(
-        `Trakt | ${ratingPerc}% · ${formatVotesNumber(ratingRes.votes)} votes`,
-      ),
+
+    traktLink = buildTraktLink(
+      `https://trakt.tv/${urlPath}/${slug}`,
+      ratingPerc,
+      ratingRes.votes,
     );
   } else {
     const titleQuery = encodeURIComponent(title);
-    traktLink.href = `https://trakt.tv/search?query=${titleQuery}`;
-    traktLink.appendChild(document.createTextNode("Trakt"));
+    traktLink = buildTraktLink(
+      `https://trakt.tv/search?query=${titleQuery}`,
+      null,
+      null,
+    );
   }
 
   const container = document.createElement("div");
