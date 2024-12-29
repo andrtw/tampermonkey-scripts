@@ -110,6 +110,26 @@ async function onDetailsOpened() {
     return yearElem.textContent;
   }
 
+  function formatVotesNumber(votes) {
+    console.log("Votes", votes);
+    let factor = 0;
+    if (votes >= 100000) {
+      factor = 1000;
+    } else if (votes >= 1000) {
+      factor = 100;
+    } else {
+      return votes.toString();
+    }
+    const normalizedVotes = Math.round(votes / factor) * factor;
+    return normalizedVotes.toString().replace(/(\d)\d{2}$/, (_, p1) => {
+      if (p1 === "0") {
+        return "k";
+      } else {
+        return `.${p1}k`;
+      }
+    });
+  }
+
   function getUrlPathFromType(type) {
     switch (type) {
       case "show":
@@ -153,10 +173,14 @@ async function onDetailsOpened() {
     const slug = result[type].ids.slug;
 
     const typeUrlPath = getUrlPathFromType(type);
-    const rating = await getRating(typeUrlPath, slug);
-    const ratingPerc = Math.floor(rating.rating * 10);
+    const ratingRes = await getRating(typeUrlPath, slug);
+    const ratingPerc = Math.floor(ratingRes.rating * 10);
     traktLink.href = `https://trakt.tv/${typeUrlPath}/${slug}`;
-    traktLink.appendChild(document.createTextNode(`Trakt | ${ratingPerc}%`));
+    traktLink.appendChild(
+      document.createTextNode(
+        `Trakt | ${ratingPerc}% · ${formatVotesNumber(ratingRes.votes)} votes`,
+      ),
+    );
   } else {
     const titleQuery = encodeURIComponent(title);
     traktLink.href = `https://trakt.tv/search?query=${titleQuery}`;
