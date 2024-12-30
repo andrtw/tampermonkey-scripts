@@ -73,6 +73,37 @@ function waitForElement(selector, predicate) {
   });
 }
 
+function waitForElements(selector) {
+  return new Promise((resolve) => {
+    const elem = document.querySelectorAll(selector);
+    if (elem) {
+      return resolve(elem);
+    }
+
+    const observer = new MutationObserver(() => {
+      const elem = document.querySelectorAll(selector);
+      if (elem) {
+        observer.disconnect();
+        resolve(elem);
+      }
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+  });
+}
+
+function arrayEquals(a, b) {
+  return (
+    Array.isArray(a) &&
+    Array.isArray(b) &&
+    a.length === b.length &&
+    a.every((value, index) => value === b[index])
+  );
+}
+
 function traktRequest(url, config) {
   const c = {
     ...config,
@@ -95,6 +126,18 @@ async function searchTrakt(type, title) {
 
 async function getRating(type, slug) {
   const url = new URL(`${type}/${slug}/ratings`, TRAKT_API_URL);
+  const response = await traktRequest(url, { method: "GET" });
+  return response.json();
+}
+
+async function getSeasons(slug) {
+  const url = new URL(`shows/${slug}/seasons?extended=full`, TRAKT_API_URL);
+  const response = await traktRequest(url, { method: "GET" });
+  return response.json();
+}
+
+async function getPeople(type, slug) {
+  const url = new URL(`${type}/${slug}/people`, TRAKT_API_URL);
   const response = await traktRequest(url, { method: "GET" });
   return response.json();
 }
@@ -162,10 +205,23 @@ async function onDetailsOpened() {
 
   async function getYear() {
     const yearElem = await waitForElement(".videoMetadata--container .year");
-    return yearElem.textContent;
+    return parseInt(yearElem.textContent);
+  }
+
+  async function getCreators() {
+    const creatorElems = await waitForElements(
+      '.about-container [data-uia="previewModal--tags-person"]',
+    );
+    return (
+      Array.from(creatorElems)
+        .find((e) => /^Creators/.test(e.textContent))
+        ?.textContent?.replace(/^Creators:\s/, "")
+        ?.split(/,\s/) ?? []
+    );
   }
 
   const type = await getSearchType();
+  const urlPath = TRAKT_URL_PATHS[type];
   const year = await getYear();
   const titleElem = await waitForElement(
     ".about-header strong",
@@ -176,20 +232,42 @@ async function onDetailsOpened() {
 
   let traktLink;
   if (results && results.length) {
-    let result = undefined;
+    let result = results[0];
+    // TODO: remove
     if (USE_LOOKUP_BY_YEAR) {
-      if (type === "show") {
-        // Do not use year lookup for shows, as the year displayed is the last season's year but the year returned by APIs is the release year
-        result = results[0];
-      } else {
-        result = results.find((r) => r[type].year == year);
+      switch (type) {
+        case TYPE_SHOW: {
+          // Do not use year lookup for shows, as the year displayed is the last season's year but the year returned by APIs is the release year
+          //result = results[0];
+          const creators = await getCreators();
+          creators.sort();
+          console.log("netflix creators", creators);
+          for (const r of results) {
+            const slug = r[type].ids.slug;
+            const people = await getPeople(urlPath, slug);
+            const traktCreators = people?.crew?.["created by"];
+            const traktCreatorsNames =
+              traktCreators?.map((c) => c.person.name) ?? [];
+            console.log("trakt creators", traktCreatorsNames);
+            const found = arrayEquals(creators, traktCreatorsNames.sort());
+            if (found) {
+              console.log("result found", r);
+              result = r;
+              break;
+            }
+          }
+          break;
+        }
+        case TYPE_MOVIE: {
+          result = results.find((r) => r[type].year == year);
+          break;
+        }
+        default:
+          throw new Error(`Unknown type ${type}`);
       }
-    } else {
-      result = results[0];
     }
     const slug = result[type].ids.slug;
 
-    const urlPath = TRAKT_URL_PATHS[type];
     const ratingRes = await getRating(urlPath, slug);
     const ratingPerc = Math.floor(ratingRes.rating * 10);
 
