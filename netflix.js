@@ -201,7 +201,7 @@ async function onDetailsOpened() {
       ".videoMetadata--container .duration",
     );
     const duration = durationElem.textContent;
-    const isMovie = /^\dh(\s\d{1,2}m)?$/.test(duration);
+    const isMovie = /^(\dh)?\s?(\d{1,2}m)?$$/.test(duration);
     if (isMovie) {
       return TYPE_MOVIE;
     } else {
