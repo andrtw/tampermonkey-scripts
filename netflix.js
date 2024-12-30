@@ -19,10 +19,7 @@ const TRAKT_URL_PATHS = {
   [TYPE_SHOW]: "shows",
 };
 
-// Sometimes multiple movies with the same title are available, the only difference is the release year
-// which is reflected in the movie slug, eg: my-movie-1996 and my-movie-2024.
-// This flag tries to find the best match taking into account the release year too.
-const USE_LOOKUP_BY_YEAR = true;
+const CAST_SIZE_THRESHOLD = 3;
 
 function injectStyle(headElem) {
   const css = `
@@ -102,6 +99,15 @@ function arrayEquals(a, b) {
     a.length === b.length &&
     a.every((value, index) => value === b[index])
   );
+}
+
+function arrayIntersection(a, b) {
+  const setA = new Set(a);
+  return b.filter((value) => setA.has(value));
+}
+
+function normalizeString(str) {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
 function traktRequest(url, config) {
@@ -216,7 +222,21 @@ async function onDetailsOpened() {
       Array.from(creatorElems)
         .find((e) => /^Creators/.test(e.textContent))
         ?.textContent?.replace(/^Creators:\s/, "")
-        ?.split(/,\s/) ?? []
+        ?.split(/,\s/)
+        ?.map((name) => normalizeString(name)) ?? []
+    );
+  }
+
+  async function getCast() {
+    const castElems = await waitForElements(
+      '.about-container [data-uia="previewModal--tags-person"]',
+    );
+    return (
+      Array.from(castElems)
+        .find((e) => /^Cast/.test(e.textContent))
+        ?.textContent?.replace(/^Cast:\s/, "")
+        ?.split(/,\s/)
+        ?.map((name) => normalizeString(name)) ?? []
     );
   }
 
@@ -228,43 +248,60 @@ async function onDetailsOpened() {
     (elem) => elem?.textContent,
   );
   const title = titleElem.textContent;
-  const results = await searchTrakt(type, title);
+  const results = await searchTrakt(type, title.toLowerCase());
 
   let traktLink;
   if (results && results.length) {
     let result = results[0];
-    // TODO: remove
-    if (USE_LOOKUP_BY_YEAR) {
-      switch (type) {
-        case TYPE_SHOW: {
-          // Do not use year lookup for shows, as the year displayed is the last season's year but the year returned by APIs is the release year
-          //result = results[0];
-          const creators = await getCreators();
-          creators.sort();
-          console.log("netflix creators", creators);
-          for (const r of results) {
-            const slug = r[type].ids.slug;
-            const people = await getPeople(urlPath, slug);
-            const traktCreators = people?.crew?.["created by"];
-            const traktCreatorsNames =
-              traktCreators?.map((c) => c.person.name) ?? [];
-            console.log("trakt creators", traktCreatorsNames);
-            const found = arrayEquals(creators, traktCreatorsNames.sort());
-            if (found) {
-              console.log("result found", r);
-              result = r;
+    switch (type) {
+      case TYPE_SHOW: {
+        const netflixCreators = await getCreators();
+        netflixCreators.sort();
+
+        const netflixCast = await getCast();
+
+        for (const res of results) {
+          const slug = res[type].ids.slug;
+          const people = await getPeople(urlPath, slug);
+
+          if (netflixCreators.length) {
+            const traktCreators =
+              people?.crew?.["created by"]?.map((c) =>
+                normalizeString(c.person.name),
+              ) ?? [];
+            console.log("creators", traktCreators);
+            if (arrayEquals(netflixCreators, traktCreators.sort())) {
+              result = res;
+              console.log("found by creators", result);
               break;
             }
           }
-          break;
+
+          if (netflixCast.length) {
+            const traktCast =
+              people?.cast?.map((c) => normalizeString(c.person.name)) ?? [];
+            console.log("cast", traktCast);
+            const castIntersection = arrayIntersection(netflixCast, traktCast);
+            console.log("cast intersection", castIntersection);
+            if (castIntersection.length >= CAST_SIZE_THRESHOLD) {
+              result = res;
+              console.log("found by cast", result);
+              break;
+            }
+          }
         }
-        case TYPE_MOVIE: {
-          result = results.find((r) => r[type].year == year);
-          break;
-        }
-        default:
-          throw new Error(`Unknown type ${type}`);
+        break;
       }
+      case TYPE_MOVIE: {
+        const resultByYear = results.find((r) => r[type].year === year);
+        console.log("res by year", resultByYear);
+        if (resultByYear) {
+          result = resultByYear;
+        }
+        break;
+      }
+      default:
+        throw new Error(`Unknown type ${type}`);
     }
     const slug = result[type].ids.slug;
 
