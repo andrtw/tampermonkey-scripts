@@ -209,11 +209,6 @@ async function onDetailsOpened() {
     }
   }
 
-  async function getYear() {
-    const yearElem = await waitForElement(".videoMetadata--container .year");
-    return parseInt(yearElem.textContent);
-  }
-
   async function getCreators() {
     const creatorElems = await waitForElements(
       '.about-container [data-uia="previewModal--tags-person"]',
@@ -242,7 +237,6 @@ async function onDetailsOpened() {
 
   const type = await getSearchType();
   const urlPath = TRAKT_URL_PATHS[type];
-  const year = await getYear();
   const titleElem = await waitForElement(
     ".about-header strong",
     (elem) => elem?.textContent,
@@ -253,56 +247,45 @@ async function onDetailsOpened() {
   let traktLink;
   if (results && results.length) {
     let result = results[0];
-    switch (type) {
-      case TYPE_SHOW: {
-        const netflixCreators = await getCreators();
-        netflixCreators.sort();
 
-        const netflixCast = await getCast();
+    if (type === TYPE_SHOW) {
+      const netflixCreators = await getCreators();
+      netflixCreators.sort();
 
-        for (const res of results) {
-          const slug = res[type].ids.slug;
-          const people = await getPeople(urlPath, slug);
+      const netflixCast = await getCast();
 
-          if (netflixCreators.length) {
-            const traktCreators =
-              people?.crew?.["created by"]?.map((c) =>
-                normalizeString(c.person.name),
-              ) ?? [];
-            console.log("creators", traktCreators);
-            if (arrayEquals(netflixCreators, traktCreators.sort())) {
-              result = res;
-              console.log("found by creators", result);
-              break;
-            }
-          }
+      for (const res of results) {
+        const slug = res[type].ids.slug;
+        const people = await getPeople(urlPath, slug);
 
-          if (netflixCast.length) {
-            const traktCast =
-              people?.cast?.map((c) => normalizeString(c.person.name)) ?? [];
-            console.log("cast", traktCast);
-            const castIntersection = arrayIntersection(netflixCast, traktCast);
-            console.log("cast intersection", castIntersection);
-            if (castIntersection.length >= CAST_SIZE_THRESHOLD) {
-              result = res;
-              console.log("found by cast", result);
-              break;
-            }
+        if (netflixCreators.length) {
+          const traktCreators =
+            people?.crew?.["created by"]?.map((c) =>
+              normalizeString(c.person.name),
+            ) ?? [];
+          console.log("creators", traktCreators);
+          if (arrayEquals(netflixCreators, traktCreators.sort())) {
+            result = res;
+            console.log("found by creators", result);
+            break;
           }
         }
-        break;
-      }
-      case TYPE_MOVIE: {
-        const resultByYear = results.find((r) => r[type].year === year);
-        console.log("res by year", resultByYear);
-        if (resultByYear) {
-          result = resultByYear;
+
+        if (netflixCast.length) {
+          const traktCast =
+            people?.cast?.map((c) => normalizeString(c.person.name)) ?? [];
+          console.log("cast", traktCast);
+          const castIntersection = arrayIntersection(netflixCast, traktCast);
+          console.log("cast intersection", castIntersection);
+          if (castIntersection.length >= CAST_SIZE_THRESHOLD) {
+            result = res;
+            console.log("found by cast", result);
+            break;
+          }
         }
-        break;
       }
-      default:
-        throw new Error(`Unknown type ${type}`);
     }
+
     const slug = result[type].ids.slug;
 
     const ratingRes = await getRating(urlPath, slug);
