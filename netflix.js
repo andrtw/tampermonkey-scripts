@@ -19,6 +19,10 @@ const TRAKT_URL_PATHS = {
   [TYPE_SHOW]: "shows",
 };
 
+/**
+ * Minumin number of common cast members between Netflix and Trakt
+ * for it to be considered the same show or movie.
+ */
 const CAST_SIZE_THRESHOLD = 3;
 
 function injectStyle(headElem) {
@@ -43,6 +47,7 @@ function injectStyle(headElem) {
   headElem.appendChild(style);
 }
 
+//#region DOM
 function waitForElement(selector, predicate) {
   function ensurePredicate(elem) {
     if (!predicate) return true;
@@ -91,7 +96,9 @@ function waitForElements(selector) {
     });
   });
 }
+//#endregion
 
+//#region Utils
 function arrayEquals(a, b) {
   return (
     Array.isArray(a) &&
@@ -109,12 +116,18 @@ function arrayIntersection(a, b) {
 function normalizeString(str) {
   return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
+//#endregion
 
+//#region Trakt
+/**
+ * Helper method for sending a request to the Trakt API.
+ * Adds common headers like the API version and API key.
+ */
 function traktRequest(url, config) {
   const c = {
     ...config,
     headers: {
-      ...config.headers,
+      ...(config?.headers ?? {}),
       "Content-Type": "application/json",
       "trakt-api-version": "2",
       "trakt-api-key": TRAKT_API_KEY,
@@ -123,35 +136,51 @@ function traktRequest(url, config) {
   return fetch(url, c);
 }
 
+/**
+ * Helper method for sending a GET request to the Trakt API.
+ */
+function getTraktRequest(url) {
+  return traktRequest(url, { method: "GET" });
+}
+
 async function searchTrakt(type, title) {
   const url = new URL(`search/${type}`, TRAKT_API_URL);
   url.searchParams.append("query", title);
-  const response = await traktRequest(url, { method: "GET" });
+  const response = await getTraktRequest(url);
   return response.json();
 }
 
 async function getRating(type, slug) {
   const url = new URL(`${type}/${slug}/ratings`, TRAKT_API_URL);
-  const response = await traktRequest(url, { method: "GET" });
+  const response = await traktRequest(url);
   return response.json();
 }
 
 async function getSeasons(slug) {
   const url = new URL(`shows/${slug}/seasons?extended=full`, TRAKT_API_URL);
-  const response = await traktRequest(url, { method: "GET" });
+  const response = await traktRequest(url);
   return response.json();
 }
 
 async function getPeople(type, slug) {
   const url = new URL(`${type}/${slug}/people`, TRAKT_API_URL);
-  const response = await traktRequest(url, { method: "GET" });
+  const response = await traktRequest(url);
   return response.json();
 }
+//#endregion
 
 function buildTraktLink(href, rating, votes) {
+  /**
+   * Formats the number of votes according to the following rules:
+   * - if the number is less than 1000, it shows it with no formatting
+   * - if the number is more than 1000, it shows it in the "k" format
+   *   with a precision of 100. Eg: 1.280 -> 1.3k
+   * - if the number is more than 100.000, it shows it in the "k" format
+   *   with a precision of 1000. Eg: 100.800 -> 101k
+   */
   function formatVotesNumber(votes) {
     let factor = 0;
-    if (votes >= 100000) {
+    if (votes >= 100_000) {
       factor = 1000;
     } else if (votes >= 1000) {
       factor = 100;
@@ -209,6 +238,9 @@ async function onDetailsOpened() {
     }
   }
 
+  /**
+   * Returns a list of creator names as they appear on the Netflix detail page.
+   */
   async function getCreators() {
     const creatorElems = await waitForElements(
       '.about-container [data-uia="previewModal--tags-person"]',
@@ -222,6 +254,9 @@ async function onDetailsOpened() {
     );
   }
 
+  /**
+   * Returns a list of cast members names as they appear on the Netflix detail page.
+   */
   async function getCast() {
     const castElems = await waitForElements(
       '.about-container [data-uia="previewModal--tags-person"]',
@@ -275,6 +310,10 @@ async function onDetailsOpened() {
           const traktCast =
             people?.cast?.map((c) => normalizeString(c.person.name)) ?? [];
           console.log("cast", traktCast);
+          // Why intersection rather than equality? Netflix and Trakt casts might not exactly match
+          // and some cast members might be left out from one or the other.
+          // People's names might be incomplete (missing middle name), or have an abbreviated middle
+          // or last names.
           const castIntersection = arrayIntersection(netflixCast, traktCast);
           console.log("cast intersection", castIntersection);
           if (castIntersection.length >= CAST_SIZE_THRESHOLD) {
