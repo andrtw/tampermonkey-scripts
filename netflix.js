@@ -289,43 +289,45 @@ async function onDetailsOpened() {
 
       const netflixCast = await getCast();
 
-      for (const res of results) {
-        const slug = res[type].ids.slug;
-        const people = await getPeople(urlPath, slug);
+      if (netflixCreators.length || netflixCast.length) {
+        for (const res of results) {
+          const slug = res[type].ids.slug;
+          const people = await getPeople(urlPath, slug);
 
-        if (netflixCreators.length) {
-          const traktCreators =
-            people?.crew?.["created by"]?.map((c) =>
-              normalizeString(c.person.name),
-            ) ?? [];
-          console.log("creators", traktCreators);
-          if (arrayEquals(netflixCreators, traktCreators.sort())) {
-            result = res;
-            console.log("found by creators", result);
-            break;
+          if (netflixCreators.length) {
+            const traktCreators =
+              people?.crew?.["created by"]?.map((c) =>
+                normalizeString(c.person.name),
+              ) ?? [];
+            console.log("creators", traktCreators);
+            if (arrayEquals(netflixCreators, traktCreators.sort())) {
+              result = res;
+              console.log("found by creators", result);
+              break;
+            }
           }
-        }
 
-        if (netflixCast.length) {
-          const traktCast =
-            people?.cast?.map((c) => normalizeString(c.person.name)) ?? [];
-          console.log("cast", traktCast);
-          // Why intersection rather than equality? Netflix and Trakt casts might not exactly match
-          // and some cast members might be left out from one or the other.
-          // People's names might be incomplete (missing middle name), or have an abbreviated middle
-          // or last names.
-          const castIntersection = arrayIntersection(netflixCast, traktCast);
-          console.log("cast intersection", castIntersection);
+          if (netflixCast.length) {
+            const traktCast =
+              people?.cast?.map((c) => normalizeString(c.person.name)) ?? [];
+            console.log("cast", traktCast);
+            // Why intersection rather than equality? Netflix and Trakt casts might not exactly match
+            // and some cast members might be left out from one or the other.
+            // People's names might be incomplete (missing middle name), or have an abbreviated middle
+            // or last names.
+            const castIntersection = arrayIntersection(netflixCast, traktCast);
+            console.log("cast intersection", castIntersection);
 
-          const castMatchesExactly =
-            castIntersection.length === netflixCast.length;
-          const castMatchesEnough =
-            castIntersection.length >= CAST_SIZE_THRESHOLD;
+            const castMatchesExactly =
+              castIntersection.length === netflixCast.length;
+            const castMatchesEnough =
+              castIntersection.length >= CAST_SIZE_THRESHOLD;
 
-          if (castMatchesExactly || castMatchesEnough) {
-            result = res;
-            console.log("found by cast", result);
-            break;
+            if (castMatchesExactly || castMatchesEnough) {
+              result = res;
+              console.log("found by cast", result);
+              break;
+            }
           }
         }
       }
