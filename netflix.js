@@ -316,7 +316,13 @@ async function onDetailsOpened() {
           // or last names.
           const castIntersection = arrayIntersection(netflixCast, traktCast);
           console.log("cast intersection", castIntersection);
-          if (castIntersection.length >= CAST_SIZE_THRESHOLD) {
+
+          const castMatchesExactly =
+            castIntersection.length === netflixCast.length;
+          const castMatchesEnough =
+            castIntersection.length >= CAST_SIZE_THRESHOLD;
+
+          if (castMatchesExactly || castMatchesEnough) {
             result = res;
             console.log("found by cast", result);
             break;
