@@ -306,7 +306,9 @@ class RemainingTimeController {
     const fullscreenParent = document.querySelector(".html5-video-player");
     fullscreenParent.appendChild(fullscreenBtnContainer);
 
-    const remainingTimeParent = document.querySelector(".ytp-time-display");
+    const remainingTimeParent = document.querySelector(
+      ".ytp-time-wrapper .ytp-time-contents",
+    );
     remainingTimeParent.appendChild(remainingTime);
 
     updateSpeed(INITIAL_SPEED);
