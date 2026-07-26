@@ -28,17 +28,24 @@ const TRAKT_URL_PATHS = {
  */
 const CAST_SIZE_THRESHOLD = 3;
 
+const TRAKT_LOGO =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#9f42c6" d="M48 11.26v25.47C48 42.95 42.95 48 36.73 48H11.26C5.04 48 0 42.95 0 36.73V11.26C0 5.04 5.04 0 11.26 0h25.47c3.32 0 6.3 1.43 8.37 3.72.47.52.89 1.08 1.25 1.68.18.29.34.59.5.89.33.68.6 1.39.79 2.14.1.37.18.76.23 1.15.09.54.13 1.11.13 1.68Z"/><path fill="#fff" d="m13.62 17.97 7.92 7.92 1.47-1.47-7.92-7.92-1.47 1.47Zm-.7.7-1.46 1.46 14.4 14.4 1.46-1.47L23 28.75 46.35 5.4c-.36-.6-.78-1.16-1.25-1.68L21.54 27.28l-8.62-8.61Zm15.09 13.7 1.47-1.46-2.16-2.16L47.64 8.43c-.19-.75-.46-1.46-.79-2.14L24.39 28.75l3.62 3.62ZM47.87 9.58 28.7 28.75l1.47 1.46L48 12.38v-1.12c0-.57-.04-1.14-.13-1.68ZM25.16 22.27l-7.92-7.92-1.47 1.47 7.92 7.92 1.47-1.47Zm16.16 12.85c0 3.42-2.78 6.2-6.2 6.2H12.88c-3.42 0-6.2-2.78-6.2-6.2V12.88c0-3.42 2.78-6.21 6.2-6.21h20.78V4.6H12.88c-4.56 0-8.28 3.71-8.28 8.28v22.24c0 4.56 3.71 8.28 8.28 8.28h22.24c4.56 0 8.28-3.71 8.28-8.28v-3.51h-2.07v3.51Z"/></svg>';
+
 function injectStyle(headElem) {
   const css = `
 .ttv-logo {
   margin-right: 4px;
   width: 20px;
   height: 20px;
-  background: url("https://walter-r2.trakt.tv/hotlink-ok/public/2024/favicon.svg");
 }
 .ttv-link {
   display: inline-flex;
   align-items: center;
+}
+.ttv-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 `;
   const style = document.createElement("style");
@@ -166,59 +173,73 @@ async function getPeople(type, slug) {
 }
 //#endregion
 
-function buildTraktLink(href, rating, votes) {
-  /**
-   * Formats the number of votes according to the following rules:
-   * - if the number is less than 1000, it shows it with no formatting
-   * - if the number is more than 1000, it shows it in the "k" format
-   *   with a precision of 100. Eg: 1.280 -> 1.3k
-   * - if the number is more than 100.000, it shows it in the "k" format
-   *   with a precision of 1000. Eg: 100.800 -> 101k
-   */
-  function formatVotesNumber(votes) {
-    let factor = 0;
-    if (votes >= 100_000) {
-      factor = 1000;
-    } else if (votes >= 1000) {
-      factor = 100;
-    } else {
-      return votes.toString();
-    }
-    const normalizedVotes = Math.round(votes / factor) * factor;
-    return normalizedVotes.toString().replace(/(\d)\d{2}$/, (_, p1) => {
-      if (p1 === "0") {
-        return "k";
-      } else {
-        return `.${p1}k`;
-      }
-    });
-  }
+/**
+ * Builds an SVG DOM element.
+ */
+function createSvg(svg) {
+  const container = document.createElement("span");
+  container.innerHTML = svg;
+  return container.firstChild;
+}
 
+/**
+ * Builds an anchor element with a Trakt logo leading icon.
+ */
+function buildTraktLink(text, url) {
   const traktLink = document.createElement("a");
   traktLink.classList.add("tag-item", "ttv-link");
   traktLink.target = "_blank";
-  traktLink.href = href;
+  traktLink.href = url;
 
-  const traktLogo = document.createElement("div");
+  const traktLogo = createSvg(TRAKT_LOGO);
   traktLogo.classList.add("ttv-logo");
+
   traktLink.appendChild(traktLogo);
-
-  const infoList = [];
-  if (rating) {
-    infoList.push(`${rating}%`);
-  }
-  if (votes) {
-    infoList.push(`${formatVotesNumber(votes)} votes`);
-  }
-
-  let text = "Trakt";
-  if (infoList.length) {
-    const info = infoList.join(" · ");
-    text += " | " + info;
-  }
-
   traktLink.appendChild(document.createTextNode(text));
+
   return traktLink;
+}
+
+function buildTraktSummary(url, rating, votes, overview) {
+  const container = document.createElement("div");
+  container.classList.add("ttv-summary");
+
+  container.appendChild(
+    buildTraktLink(`${rating}% · ${formatVotesNumber(votes)} votes`, url),
+  );
+
+  const overviewContainer = document.createElement("span");
+  overviewContainer.appendChild(document.createTextNode(overview));
+  container.appendChild(overviewContainer);
+
+  return container;
+}
+
+/**
+ * Formats the number of votes according to the following rules:
+ * - if the number is less than 1000, it shows it with no formatting
+ * - if the number is more than 1000, it shows it in the "k" format
+ *   with a precision of 100. Eg: 1.280 -> 1.3k
+ * - if the number is more than 100.000, it shows it in the "k" format
+ *   with a precision of 1000. Eg: 100.800 -> 101k
+ */
+function formatVotesNumber(votes) {
+  let factor = 0;
+  if (votes >= 100_000) {
+    factor = 1000;
+  } else if (votes >= 1000) {
+    factor = 100;
+  } else {
+    return votes.toString();
+  }
+  const normalizedVotes = Math.round(votes / factor) * factor;
+  return normalizedVotes.toString().replace(/(\d)\d{2}$/, (_, p1) => {
+    if (p1 === "0") {
+      return "k";
+    } else {
+      return `.${p1}k`;
+    }
+  });
 }
 
 /**
@@ -380,31 +401,30 @@ async function onDetailsOpened() {
   const title = titleElem.textContent;
   const results = await searchTrakt(type, title.toLowerCase());
 
-  let traktLink;
+  let traktElem;
   if (results && results.length) {
     const result = await findBestMatch(type, results);
     console.log("Best match", result);
     const slug = result[type].ids.slug;
+    const overview = result[type].overview;
     const ratingRes = await getRating(urlPath, slug);
     const ratingPerc = Math.floor(ratingRes.rating * 10);
 
-    traktLink = buildTraktLink(
+    traktElem = buildTraktSummary(
       `https://trakt.tv/${urlPath}/${slug}`,
       ratingPerc,
       ratingRes.votes,
+      overview,
     );
   } else {
-    const titleQuery = encodeURIComponent(title);
-    traktLink = buildTraktLink(
-      `https://trakt.tv/search?query=${titleQuery}`,
-      null,
-      null,
-    );
+    const text = `Search "${title}" on Trakt`;
+    const url = `https://trakt.tv/search?q=${encodeURIComponent(title)}`;
+    traktElem = buildTraktLink(text, url);
   }
 
   const container = document.createElement("div");
   container.classList.add("previewModal--tags");
-  container.appendChild(traktLink);
+  container.appendChild(traktElem);
 
   const parent = document.querySelector(
     ".previewModal--detailsMetadata-info div",
