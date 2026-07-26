@@ -14,9 +14,12 @@ const TRAKT_API_URL = "https://api.trakt.tv";
 const TYPE_MOVIE = "movie";
 const TYPE_SHOW = "show";
 
+const URL_PATH_MOVIE = "movies";
+const URL_PATH_SHOW = "shows";
+
 const TRAKT_URL_PATHS = {
-  [TYPE_MOVIE]: "movies",
-  [TYPE_SHOW]: "shows",
+  [TYPE_MOVIE]: URL_PATH_MOVIE,
+  [TYPE_SHOW]: URL_PATH_SHOW,
 };
 
 /**
@@ -144,7 +147,7 @@ function getTraktRequest(url) {
 }
 
 async function searchTrakt(type, title) {
-  const url = new URL(`search/${type}`, TRAKT_API_URL);
+  const url = new URL(`search/${type}/exact`, TRAKT_API_URL);
   url.searchParams.append("query", title);
   const response = await getTraktRequest(url);
   return response.json();
@@ -152,12 +155,6 @@ async function searchTrakt(type, title) {
 
 async function getRating(type, slug) {
   const url = new URL(`${type}/${slug}/ratings`, TRAKT_API_URL);
-  const response = await traktRequest(url);
-  return response.json();
-}
-
-async function getSeasons(slug) {
-  const url = new URL(`shows/${slug}/seasons?extended=full`, TRAKT_API_URL);
   const response = await traktRequest(url);
   return response.json();
 }
@@ -224,52 +221,134 @@ function buildTraktLink(href, rating, votes) {
   return traktLink;
 }
 
-async function onDetailsOpened() {
-  async function getSearchType() {
-    const durationElem = await waitForElement(
-      ".videoMetadata--container .duration",
-    );
-    const duration = durationElem.textContent;
-    const isMovie = /^(\dh)?\s?(\d{1,2}m)?$$/.test(duration);
-    if (isMovie) {
-      return TYPE_MOVIE;
-    } else {
-      return TYPE_SHOW;
+async function getSearchType() {
+  const durationElem = await waitForElement(
+    ".videoMetadata--container .duration",
+  );
+  const duration = durationElem.textContent;
+  const isMovie = /^(\dh)?\s?(\d{1,2}m)?$$/.test(duration);
+  if (isMovie) {
+    return TYPE_MOVIE;
+  } else {
+    return TYPE_SHOW;
+  }
+}
+
+/**
+ * Returns a list of creator names as they appear on the Netflix detail page.
+ */
+async function getCreators() {
+  const creatorElems = await waitForElements(
+    '.about-container [data-uia="previewModal--tags-person"]',
+  );
+  return (
+    Array.from(creatorElems)
+      .find((e) => /^Creators/.test(e.textContent))
+      ?.textContent?.replace(/^Creators:\s/, "")
+      ?.split(/,\s/)
+      ?.map((name) => normalizeString(name)) ?? []
+  );
+}
+
+/**
+ * Returns a list of cast members names as they appear on the Netflix detail page.
+ */
+async function getCast() {
+  const castElems = await waitForElements(
+    '.about-container [data-uia="previewModal--tags-person"]',
+  );
+  return (
+    Array.from(castElems)
+      .find((e) => /^Cast/.test(e.textContent))
+      ?.textContent?.replace(/^Cast:\s/, "")
+      ?.split(/,\s/)
+      ?.map((name) => normalizeString(name)) ?? []
+  );
+}
+
+async function findBestMatch(type, results) {
+  if (results.length === 1) {
+    return results[0];
+  }
+
+  if (type === TYPE_MOVIE) {
+    return results[0];
+  }
+
+  if (type === TYPE_SHOW) {
+    const bestMatch = await findBestShow(results);
+    if (bestMatch) {
+      return bestMatch;
     }
   }
 
-  /**
-   * Returns a list of creator names as they appear on the Netflix detail page.
-   */
-  async function getCreators() {
-    const creatorElems = await waitForElements(
-      '.about-container [data-uia="previewModal--tags-person"]',
-    );
-    return (
-      Array.from(creatorElems)
-        .find((e) => /^Creators/.test(e.textContent))
-        ?.textContent?.replace(/^Creators:\s/, "")
-        ?.split(/,\s/)
-        ?.map((name) => normalizeString(name)) ?? []
-    );
+  return results[0];
+}
+
+async function findBestShow(results) {
+  const netflixCreators = await getCreators();
+  netflixCreators.sort();
+  console.log("Netflix creators", netflixCreators);
+
+  const netflixCast = await getCast();
+  console.log("Netflix cast", netflixCast);
+
+  if (!netflixCreators.length && !netflixCast.length) {
+    return results[0];
   }
 
-  /**
-   * Returns a list of cast members names as they appear on the Netflix detail page.
-   */
-  async function getCast() {
-    const castElems = await waitForElements(
-      '.about-container [data-uia="previewModal--tags-person"]',
-    );
-    return (
-      Array.from(castElems)
-        .find((e) => /^Cast/.test(e.textContent))
-        ?.textContent?.replace(/^Cast:\s/, "")
-        ?.split(/,\s/)
-        ?.map((name) => normalizeString(name)) ?? []
-    );
+  for (const res of results) {
+    const slug = res[TYPE_SHOW].ids.slug;
+    const traktPeople = await getPeople(URL_PATH_SHOW, slug);
+
+    if (findBestShowByCreators(netflixCreators, traktPeople)) {
+      console.log("Found by creators", res);
+      return res;
+    }
+    if (findBestShowByCast(netflixCast, traktPeople)) {
+      console.log("Found by cast", res);
+      return res;
+    }
   }
 
+  return null;
+}
+
+function findBestShowByCreators(netflixCreators, traktPeople) {
+  if (!netflixCreators) {
+    return null;
+  }
+
+  const traktCreators =
+    traktPeople?.crew?.["created by"]?.map((c) =>
+      normalizeString(c.person.name),
+    ) ?? [];
+  console.log("Trakt creators", traktCreators);
+  return arrayEquals(netflixCreators, traktCreators.sort());
+}
+
+function findBestShowByCast(netflixCast, traktPeople) {
+  if (!netflixCast) {
+    return;
+  }
+
+  const traktCast =
+    traktPeople?.cast?.map((c) => normalizeString(c.person.name)) ?? [];
+  console.log("Trakt cast", traktCast);
+  // Why intersection rather than equality? Netflix and Trakt casts might not exactly match
+  // and some cast members might be left out from one or the other.
+  // People's names might be incomplete (missing middle name), or have an abbreviated middle
+  // or last names.
+  const intersection = arrayIntersection(netflixCast, traktCast);
+  console.log("Cast intersection", intersection);
+
+  const matchesExactly = intersection.length === netflixCast.length;
+  const matchesEnough = intersection.length >= CAST_SIZE_THRESHOLD;
+
+  return matchesExactly || matchesEnough;
+}
+
+async function onDetailsOpened() {
   const type = await getSearchType();
   const urlPath = TRAKT_URL_PATHS[type];
   const titleElem = await waitForElement(
@@ -281,60 +360,9 @@ async function onDetailsOpened() {
 
   let traktLink;
   if (results && results.length) {
-    let result = results[0];
-
-    if (type === TYPE_SHOW) {
-      const netflixCreators = await getCreators();
-      netflixCreators.sort();
-
-      const netflixCast = await getCast();
-
-      if (netflixCreators.length || netflixCast.length) {
-        for (const res of results) {
-          const slug = res[type].ids.slug;
-          const people = await getPeople(urlPath, slug);
-
-          if (netflixCreators.length) {
-            const traktCreators =
-              people?.crew?.["created by"]?.map((c) =>
-                normalizeString(c.person.name),
-              ) ?? [];
-            console.log("creators", traktCreators);
-            if (arrayEquals(netflixCreators, traktCreators.sort())) {
-              result = res;
-              console.log("found by creators", result);
-              break;
-            }
-          }
-
-          if (netflixCast.length) {
-            const traktCast =
-              people?.cast?.map((c) => normalizeString(c.person.name)) ?? [];
-            console.log("cast", traktCast);
-            // Why intersection rather than equality? Netflix and Trakt casts might not exactly match
-            // and some cast members might be left out from one or the other.
-            // People's names might be incomplete (missing middle name), or have an abbreviated middle
-            // or last names.
-            const castIntersection = arrayIntersection(netflixCast, traktCast);
-            console.log("cast intersection", castIntersection);
-
-            const castMatchesExactly =
-              castIntersection.length === netflixCast.length;
-            const castMatchesEnough =
-              castIntersection.length >= CAST_SIZE_THRESHOLD;
-
-            if (castMatchesExactly || castMatchesEnough) {
-              result = res;
-              console.log("found by cast", result);
-              break;
-            }
-          }
-        }
-      }
-    }
-
+    const result = await findBestMatch(type, results);
+    console.log("Best match", result);
     const slug = result[type].ids.slug;
-
     const ratingRes = await getRating(urlPath, slug);
     const ratingPerc = Math.floor(ratingRes.rating * 10);
 
