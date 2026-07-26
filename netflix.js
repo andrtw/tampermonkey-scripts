@@ -221,7 +221,14 @@ function buildTraktLink(href, rating, votes) {
   return traktLink;
 }
 
-async function getSearchType() {
+/**
+ * Returns the type of the current entity: can be either "movie"
+ * or "show".
+ *
+ * The value is used to different extents to differentiate between
+ * the two types in the Trakt API.
+ */
+async function getEntityType() {
   const durationElem = await waitForElement(
     ".videoMetadata--container .duration",
   );
@@ -266,6 +273,15 @@ async function getCast() {
   );
 }
 
+/**
+ * Attempts to find the best match in the given results array.
+ *
+ * Applies different techniques based on the entity type and
+ * on the available data on both Netflix and Trakt.
+ *
+ * If all of the above fails, it falls back at returning the
+ * first result in the list.
+ */
 async function findBestMatch(type, results) {
   if (results.length === 1) {
     return results[0];
@@ -285,6 +301,12 @@ async function findBestMatch(type, results) {
   return results[0];
 }
 
+/**
+ * Attempts to find the best match for a show.
+ *
+ * It compares various data provided by Netflix and Trakt
+ * and tries to intersect it to find the best match.
+ */
 async function findBestShow(results) {
   const netflixCreators = await getCreators();
   netflixCreators.sort();
@@ -349,7 +371,7 @@ function findBestShowByCast(netflixCast, traktPeople) {
 }
 
 async function onDetailsOpened() {
-  const type = await getSearchType();
+  const type = await getEntityType();
   const urlPath = TRAKT_URL_PATHS[type];
   const titleElem = await waitForElement(
     ".about-header strong",
