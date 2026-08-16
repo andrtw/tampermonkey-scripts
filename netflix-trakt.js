@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Netflix
+// @name         Netflix - Trakt
 // @namespace    andrtw
 // @version      1
 // @author       andrtw
