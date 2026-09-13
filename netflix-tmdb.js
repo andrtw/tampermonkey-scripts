@@ -13,6 +13,7 @@ const TMDB_READ_ACCESS_TOKEN = "YOU_ACCESS_TOKEN";
 const ENTITY_MOVIE = "movie";
 const ENTITY_SERIES = "series";
 
+const TMDB_BASE_URL = "https://themoviedb.org";
 const TMDB_API_BASE_URL = "https://api.themoviedb.org";
 const TMDB_API_VERSION = "3";
 const TMDB_API_MOVIE_PATH = "movie";
@@ -144,14 +145,14 @@ async function search(entity, title) {
   return body?.results?.[0];
 }
 
-function buildTmdbSummary(link, vote, voteCount, overview) {
+function buildTmdbSummary(url, vote, voteCount, overview) {
   const container = document.createElement("div");
   container.classList.add("tmdb-summary");
 
   container.appendChild(
     buildTmdbLink(
       `${formatVote(vote)}% · ${formatVotesNumber(voteCount)} votes`,
-      "https://www.themoviedb.org",
+      url,
     ),
   );
 
@@ -220,8 +221,9 @@ async function onDetailsOpened() {
 
   let tmdbElem;
   if (result) {
+    const url = `${TMDB_BASE_URL}/${TMDB_API_PATHS[entity]}/${result.id}`;
     tmdbElem = buildTmdbSummary(
-      "",
+      url,
       result.vote_average,
       result.vote_count,
       result.overview,
