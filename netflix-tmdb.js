@@ -22,9 +22,28 @@ const TMDB_API_PATHS = {
   [ENTITY_SERIES]: TMDB_API_SERIES_PATH,
 };
 
+const TMDB_LOGO_SVG =
+  "https://www.themoviedb.org/assets/2/v4/logos/v2/blue_short-8e7b30f73a4020692ccca9c88bafe5dcb6f8a62a4c6bc55cd9ba82bb2cd95f6c.svg";
+
 // #region DOM
 function injectStyle(headElem) {
   const css = `
+.tmdb-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tmdb-link {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+}
+.tmdb-link:hover {
+  text-decoration: underline;
+}
+.tmdb-link .tmdb-logo {
+  width: 100px;
+}
 `;
   const style = document.createElement("style");
   if (style.styleSheet) {
@@ -125,15 +144,100 @@ async function search(entity, title) {
   return body?.results?.[0];
 }
 
+function buildTmdbSummary(link, vote, voteCount, overview) {
+  const container = document.createElement("div");
+  container.classList.add("tmdb-summary");
+
+  container.appendChild(
+    buildTmdbLink(
+      `${formatVote(vote)}% · ${formatVotesNumber(voteCount)} votes`,
+      "https://www.themoviedb.org",
+    ),
+  );
+
+  const overviewElem = document.createElement("span");
+  overviewElem.appendChild(document.createTextNode(overview));
+  container.appendChild(overviewElem);
+
+  return container;
+}
+
+function buildTmdbLink(text, url) {
+  const link = document.createElement("a");
+  link.classList.add("tmdb-link");
+  link.target = "_blank";
+  link.href = url;
+
+  const logo = document.createElement("img");
+  logo.src = TMDB_LOGO_SVG;
+  logo.classList.add("tmdb-logo");
+
+  link.appendChild(logo);
+  link.appendChild(document.createTextNode(text));
+
+  return link;
+}
+
+/**
+ * Formats the number of votes according to the following rules:
+ * - if the number is less than 1000, it shows it with no formatting
+ * - if the number is more than 1000, it shows it in the "k" format
+ *   with a precision of 100. Eg: 1.280 -> 1.3k
+ * - if the number is more than 100.000, it shows it in the "k" format
+ *   with a precision of 1000. Eg: 100.800 -> 101k
+ */
+function formatVotesNumber(votes) {
+  let factor = 0;
+  if (votes >= 100_000) {
+    factor = 1000;
+  } else if (votes >= 1000) {
+    factor = 100;
+  } else {
+    return votes.toString();
+  }
+  const normalizedVotes = Math.round(votes / factor) * factor;
+  return normalizedVotes.toString().replace(/(\d)\d{2}$/, (_, p1) => {
+    if (p1 === "0") {
+      return "k";
+    } else {
+      return `.${p1}k`;
+    }
+  });
+}
+
+/**
+ * Formats the vote as an integer in the range 0-100.
+ */
+function formatVote(vote) {
+  const perc = vote * 10;
+  return Math.round(perc);
+}
+
 async function onDetailsOpened() {
   const entity = await getEntityType();
   const title = await getTitle();
   const result = await search(entity, title);
+
+  let tmdbElem;
   if (result) {
-    console.log(result.overview, result.vote_average, result.vote_count);
+    tmdbElem = buildTmdbSummary(
+      "",
+      result.vote_average,
+      result.vote_count,
+      result.overview,
+    );
   } else {
     console.log("No results");
   }
+
+  const container = document.createElement("div");
+  container.classList.add("previewModal--tags");
+  container.appendChild(tmdbElem);
+
+  const parent = document.querySelector(
+    ".previewModal--detailsMetadata-info div",
+  );
+  parent.appendChild(container);
 }
 
 const URLS_HANDLER = {
