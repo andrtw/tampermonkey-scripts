@@ -229,7 +229,9 @@ async function onDetailsOpened() {
       result.overview,
     );
   } else {
-    console.log("No results");
+    const url = new URL("search", TMDB_BASE_URL);
+    url.searchParams.append("query", title);
+    tmdbElem = buildTmdbLink(`Search "${title}"`, url);
   }
 
   const container = document.createElement("div");
