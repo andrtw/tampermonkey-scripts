@@ -8,3 +8,4 @@ A collection of [Tampermonkey](https://www.tampermonkey.net/) scripts enabling c
 | `wordreference-search.js` | `*://*/*` | Select/highlight text to translate it on the spot via WordReference |
 | `youtube.js` | <ul><li>`https://www.youtube.com/watch*`</li><li>`https://www.youtube.com/shorts/*`</li></ul> | <ul><li>Adds buttons to increase/decrease/reset the video playback speed</li><li>Displays the remaining time according to the current playback speed</li><li>Adds a button to toggle Picture-in-picture mode</li></ul> |
 | `netflix-trakt.js` | `https://www.netflix.com/*` | Adds Trakt rating, number of reviews, and overview to the Netflix film/show page |
+| `netflix-tmdb.js` | `https://www.netflix.com/*` | Adds TMDB rating, number of reviews, and overview to the Netflix film/show page |
